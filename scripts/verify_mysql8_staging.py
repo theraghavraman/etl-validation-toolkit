@@ -62,7 +62,11 @@ def grants_are_disposable_schema_only(grants: list[str], schema: str) -> bool:
     schema_sql = re.escape(schema)
     limited = re.compile(r"\bON\s+`?" + schema_sql + r"`?\.\*\s+TO\b", re.I)
     usage = re.compile(r"^GRANT\s+USAGE\s+ON\s+\*\.\*\s+TO\b", re.I)
-    return bool(grants) and all(usage.search(grant) or limited.search(grant) for grant in grants)
+    # SHOW GRANTS escapes literal underscores in database identifiers.
+    return bool(grants) and all(
+        usage.search(grant) or limited.search(grant.replace("\\_", "_"))
+        for grant in grants
+    )
 
 
 def strict_sql_mode_is_enabled(sql_mode: str) -> bool:
