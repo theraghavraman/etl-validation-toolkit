@@ -1,3 +1,10 @@
+## Application completion — 2026-11-11
+
+- Fixed Pyodide SQLite loading, stale browser reports and browser CSV formula escaping.
+- Added a local launcher, complete source packaging and current repository links.
+- Fixed lint/types, Python 3.11 dependency compatibility, escaped MySQL grant parsing and metadata aliases.
+- Verified all four MySQL 8.0/8.4 and Python 3.11/3.13 staging/shadow jobs; see `docs/completion-report.md`.
+
 # Changelog
 
 ## 0.1.2 — production hardening candidate (2026-11-10)

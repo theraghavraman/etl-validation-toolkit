@@ -1,7 +1,7 @@
 # Phase 3: Read-only shadow-table reconciliation and retry integrity
 
 **Release:** ETL Validation Toolkit v0.1.2, source-only verification extension.  
-**Status:** Offline verification completed; **MySQL 8 staging execution remains pending**.  
+**Status:** MySQL 8.0/8.4 staging and independent shadow reconciliation passed on Python 3.11/3.13. See [completion evidence](completion-report.md).  
 **Safety:** This workflow is ONLY for an approved, disposable MySQL 8 shadow schema.
 
 ## Purpose and evidence

@@ -35,6 +35,8 @@ or Transaction, load a sample or a UTF-8 CSV up to 5 MB, inspect accepted and
 rejected rows, and download the rejects CSV. MySQL is needed only for CLI database
 loads and integration checks.
 
+Current application fixes, packaging and verified MySQL staging results: [completion report](docs/completion-report.md).
+
 ## Architecture
 
 ```mermaid
@@ -264,7 +266,7 @@ etlguard run path/to/pipeline.yaml --batch-id 11111111-1111-4111-8111-1111111111
 etlguard batch-status 11111111-1111-4111-8111-111111111111
 ```
 
-**Operational status:** staged release candidate. A real MySQL 8 staging run and the integration suite are required before production promotion. No live MySQL test is claimed in this handover.
+**Operational status:** staged release candidate. A real MySQL 8 staging run and the integration suite are required before production promotion. The MySQL 8 staging matrix and synthetic shadow pilot passed; see the [completion report](docs/completion-report.md) for exact evidence.
 
 ## MySQL 8 staging verification (v0.1.2)
 
