@@ -250,9 +250,11 @@ def test_cli_exposes_stable_batch_retry_and_status_commands(tmp_path):
     from typer.testing import CliRunner
     from etlguard.cli import app
 
+    from click import unstyle
+
     cli = CliRunner()
-    assert "--batch-id" in cli.invoke(app, ["run", "--help"]).output
-    assert "batch-status" in cli.invoke(app, ["--help"]).output
+    assert "--batch-id" in unstyle(cli.invoke(app, ["run", "--help"]).output)
+    assert "batch-status" in unstyle(cli.invoke(app, ["--help"]).output)
     assert cli.invoke(app, ["batch-status", "not-a-uuid"]).exit_code == 2
     assert cli.invoke(app, ["upgrade-scd2", str(tmp_path / "missing.yaml")]).exit_code == 2
 

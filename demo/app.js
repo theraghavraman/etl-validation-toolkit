@@ -110,9 +110,10 @@ async function validate() {
     renderTab("reject");
     setStatus("Validation complete");
   } catch (error) {
+    console.error(error);
     clearResult("Validation failed. Check the selected CSV and schema, then try again.");
     setValue("result-label", "VALIDATION ERROR");
-    setStatus(`Validation error: ${String(error.message || error).slice(0, 150)}`);
+    setStatus(`Validation error: ${(String(error.message || error).match(/^[A-Za-z]+(?:Error|Exception):[^\n]*/m)?.[0] || String(error.message || error)).slice(0, 180)}`);
   } finally {
     pyodide.globals.delete("csv_text");
     pyodide.globals.delete("selected_model");
@@ -171,8 +172,8 @@ $("download").addEventListener("click", () => {
 try {
   setStatus("Loading Pyodide runtime…");
   pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
-  setStatus("Loading Pydantic v2…");
-  await pyodide.loadPackage("pydantic");
+  setStatus("Loading Pydantic v2 and SQLite…");
+  await pyodide.loadPackage(["pydantic", "sqlite3"]);
   const response = await fetch("etlguard_core.zip");
   if (!response.ok) throw new Error("Python core bundle unavailable");
   pyodide.FS.writeFile("/tmp/etlguard_core.zip", new Uint8Array(await response.arrayBuffer()));

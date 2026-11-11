@@ -50,7 +50,11 @@ jobs:
           ETLGUARD_CI_MYSQL_ROOT_URL: mysql+pymysql://root:root_for_disposable_tests_only@127.0.0.1:3306/etlguard_ci
           ETLGUARD_CI_ALLOW_BOOTSTRAP: DISPOSABLE_MYSQL_ONLY
         run: python scripts/ci_shadow_smoke.py --staging-report staging-gate-report.json --report shadow-smoke-report.json
+      - name: Preserve evidence in job logs
+        if: always()
+        run: python scripts/archive_ci_evidence.py
       - name: Preserve verification evidence
+        continue-on-error: true
         if: always()
         uses: actions/upload-artifact@v4
         with:

@@ -173,6 +173,9 @@ class PilotGateTests(unittest.TestCase):
         broad = "GRANT SELECT ON *.* TO `etlguard_ci`@`%`"
         role = "GRANT `reporting_role`@`%` TO `etlguard_ci`@`%`"
         self.assertTrue(grants_are_disposable_schema_only([basic, local], "etlguard_ci"))
+        escaped = local.replace("etlguard_ci", r"etlguard\_ci")
+        self.assertTrue(grants_are_disposable_schema_only([basic, escaped], "etlguard_ci"))
+        self.assertFalse(grants_are_disposable_schema_only([basic, escaped], "etlguard_other"))
         self.assertFalse(grants_are_disposable_schema_only([basic, broad, local], "etlguard_ci"))
         self.assertFalse(grants_are_disposable_schema_only([local, role], "etlguard_ci"))
 

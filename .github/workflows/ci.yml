@@ -51,6 +51,7 @@ jobs:
           python -m coverage json -o coverage-summary.json
           python scripts/build_coverage_badge.py coverage-summary.json demo/coverage.json
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: coverage-report
           path: |
