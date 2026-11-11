@@ -1,0 +1,8 @@
+include CHANGELOG.md
+include .env.example
+include docker-compose*.yml
+include Launch*.command
+recursive-include demo *.html *.css *.js *.zip *.csv
+recursive-include docs *.md *.json *.csv
+recursive-include scripts *.py *.sql
+recursive-include .github/workflows *.yml

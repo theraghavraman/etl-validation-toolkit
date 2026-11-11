@@ -51,7 +51,7 @@ def preflight_shadow(url: Any, batch_id: str, shadow_table: str) -> dict[str, An
                 "@@read_only AS read_only, @@SESSION.sql_mode AS sql_mode"
             )).mappings().one()
             tables = list(conn.execute(text(
-                "SELECT table_name, engine FROM information_schema.tables "
+                "SELECT table_name AS table_name, engine AS engine FROM information_schema.tables "
                 "WHERE table_schema = DATABASE()"
             )).mappings())
             grants = list(conn.execute(text("SHOW GRANTS")).scalars())

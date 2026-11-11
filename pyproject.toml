@@ -33,7 +33,6 @@ etlguard = "etlguard.cli:app"
 
 [project.urls]
 Repository = "https://github.com/theraghavraman/etl-validation-toolkit"
-Demo = "https://theraghavraman.github.io/etl-validation-toolkit/"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

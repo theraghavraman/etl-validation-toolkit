@@ -103,7 +103,7 @@ def preflight(url: Any) -> dict[str, Any]:
                 "@@SESSION.sql_mode AS sql_mode"
             )).mappings().one()
             tables = list(conn.execute(text(
-                "SELECT table_name, engine, table_type FROM information_schema.tables "
+                "SELECT table_name AS table_name, engine AS engine, table_type AS table_type FROM information_schema.tables "
                 "WHERE table_schema = DATABASE()"
             )).mappings())
             grants = list(conn.execute(text("SHOW GRANTS")).scalars())

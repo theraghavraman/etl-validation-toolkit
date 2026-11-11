@@ -1,6 +1,8 @@
 """Ensure the browser's SQLite demonstration uses the production validation core."""
 
 import json
+import csv
+import io
 
 from etlguard.browser_demo import validate_csv
 
@@ -31,3 +33,14 @@ def test_browser_invalid_csv_headers():
         validate_csv("data\n", "Unknown")
     with pytest.raises(ValueError, match="more fields than its header"):
         validate_csv("customer_id,full_name\nC001,Alice,extra\n", "Customer")
+
+
+def test_browser_reject_download_escapes_formulas_but_preserves_json(example_dir):
+    text = (example_dir / "data" / "customers_messy.csv").read_text()
+    text = text.replace("bad-at-email", "=1+1")
+    result = json.loads(validate_csv(text, "Customer"))
+    raw = next(row for row in result["rejected_rows"] if row["field"] == "email")
+    exported = next(row for row in csv.DictReader(io.StringIO(result["rejects_csv"]))
+                    if row["field"] == "email")
+    assert raw["raw_value"] == "=1+1"
+    assert exported["raw_value"] == "'=1+1"

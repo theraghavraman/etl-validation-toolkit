@@ -13,7 +13,7 @@ from typing import Any
 from etlguard.config import ChecksSettings, CleaningSettings
 from etlguard.core import ValidationEngine
 from etlguard.examples.models import Customer, Transaction
-from etlguard.rejects import REJECT_COLUMNS
+from etlguard.rejects import REJECT_COLUMNS, _safe_csv_cell
 from etlguard.sources.base import Lineage, SourceRecord
 
 
@@ -66,7 +66,8 @@ def validate_csv(csv_text: str, selected_model: str = "Customer") -> str:
     rejects_buffer = io.StringIO()
     writer = csv.DictWriter(rejects_buffer, fieldnames=REJECT_COLUMNS)
     writer.writeheader()
-    writer.writerows(reject_rows)
+    writer.writerows({key: _safe_csv_cell(value) for key, value in row.items()}
+                     for row in reject_rows)
     return json.dumps({
         "model": selected_model,
         "batch_id": batch_id,

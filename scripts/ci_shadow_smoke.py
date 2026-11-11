@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import traceback
 from tempfile import TemporaryDirectory
 
 from prepare_shadow_pilot import plan
@@ -136,6 +137,8 @@ def main():
         result = {"status": "blocked", "error_type": type(exc).__name__,
                   "production_approved": False}
         print(f"CI shadow smoke blocked: {type(exc).__name__}", file=sys.stderr)
+        for frame in traceback.extract_tb(exc.__traceback__):
+            print(f"  {Path(frame.filename).name}:{frame.lineno} in {frame.name}", file=sys.stderr)
         code = 2
     out = args.report.resolve()
     out.parent.mkdir(parents=True, exist_ok=True)

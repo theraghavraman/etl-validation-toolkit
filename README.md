@@ -7,7 +7,7 @@
 
 **Data quality gates, row rejects, and SCD Type 2 history for everyday ETL jobs.**
 
-> **Portfolio project:** Synthetic example data only. The repository is independently developed and does not contain client datasets, credentials, or proprietary code. Replace `theraghavraman` in the badges and repository links after publishing to your GitHub account. Status badges become live after CI and GitHub Pages run.
+> **Portfolio project:** Synthetic example data only. The repository is independently developed and does not contain client datasets, credentials, or proprietary code. The source repository is private; the browser application can be launched locally.
 
 ## The 30-second problem statement
 
@@ -15,7 +15,25 @@ A scheduled job can succeed technically while loading the wrong records: a CSV h
 
 **ETL Guard makes those controls repeatable in Python.** Define a source, cleaning rules, a typed Pydantic model, dataset checks, a target load mode, and an error threshold in YAML. Every source row keeps batch lineage. Rejected rows become actionable CSV/JSON reports; accepted records can be staged and transactionally merged into MySQL 8. A count mismatch rolls back the load. Since v0.1.2, the success audit and batch-commit ledger commit atomically with the target data, enabling safe same-ID retries.
 
-[Try the live Pyodide demo once published](https://theraghavraman.github.io/etl-validation-toolkit/) · [Read the configuration guide](docs/configuration.md) · [Production v0.1.2 runbook](docs/production-v0.1.2.md) · [Browse release instructions](docs/deployment.md)
+[Launch the browser application](#launch-the-browser-application) · [Read the configuration guide](docs/configuration.md) · [Production v0.1.2 runbook](docs/production-v0.1.2.md) · [Browse release instructions](docs/deployment.md)
+
+## Launch the browser application
+
+On macOS, double-click **Launch ETL Guard.command** in this folder. It opens the
+application in your browser using an available local port. Keep the terminal
+window open while using the app; press Ctrl+C to stop it.
+
+On any platform with Python 3.11 or newer:
+
+```bash
+python scripts/serve_demo.py
+```
+
+The browser application needs an internet connection on startup to download
+Pyodide, Pydantic and SQLite. CSV processing stays in the browser. Select Customer
+or Transaction, load a sample or a UTF-8 CSV up to 5 MB, inspect accepted and
+rejected rows, and download the rejects CSV. MySQL is needed only for CLI database
+loads and integration checks.
 
 ## Architecture
 
