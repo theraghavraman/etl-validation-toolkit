@@ -1,0 +1,10 @@
+pipeline: customers_clean
+source: {type: csv, path: ../data/customers_clean.csv}
+model: etlguard.examples.models:Customer
+cleaning:
+  date_columns: [signup_date, end_date]
+  number_columns: [credit_limit]
+checks: {unique: [customer_id], max_null_pct: {email: 0.10}}
+target: {table: customers_clean, mode: upsert, key: [customer_id]}
+policy: {fail_if_reject_rate_above: 0.05}
+output: {directory: ../../../../reports}

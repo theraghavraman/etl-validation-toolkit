@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Run the real ETL Guard Python cleaning and Pydantic validation engine in your browser using Pyodide.">
+  <title>ETL Guard — Interactive Data Quality Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar"><a class="brand" href="./"><span class="shield">✓</span> ETL<span>GUARD</span></a><span class="topright"><span class="dot"></span> CLIENT-SIDE PYTHON · PYODIDE</span></header>
+    <main>
+      <section class="hero">
+        <div class="eyebrow">DATA QUALITY ENGINE / LIVE DEMO</div>
+        <h1>Trust the data.<br><em>Before it lands.</em></h1>
+        <p class="lead">A reusable validation gate for CSV, Excel, and API feeds. Try the actual Pydantic-powered Python core on your own CSV—nothing leaves your browser.</p>
+        <div class="hero-chips"><span>PYTHON 3.11+</span><span>PYDANTIC V2</span><span>SQLITE SANDBOX</span><span>ZERO BACKEND</span></div>
+      </section>
+      <div class="workspace">
+        <section class="panel inputs" aria-label="Choose dataset">
+          <div class="section-heading"><span class="step">01</span><h2>Input feed</h2></div>
+          <label for="model">Validation schema</label>
+          <select id="model"><option value="Customer">Customer dimension</option><option value="Transaction">Transaction fact</option></select>
+          <div id="dropzone" class="dropzone" role="button" tabindex="0" aria-label="Drop or browse a CSV file">
+            <div class="upload-icon">↥</div>
+            <strong>Drop your CSV here</strong><p>or click to browse · UTF-8 CSV</p>
+            <input id="file" type="file" accept=".csv,text/csv" aria-label="Choose CSV file" hidden>
+          </div>
+          <div class="input-actions"><button id="sample" class="secondary">↻ Load messy sample</button><button id="validate" class="primary" disabled>Run validation <span>→</span></button></div>
+          <div class="meta"><span id="filename">No feed loaded</span><span id="status" role="status">Initializing Python engine…</span></div>
+          <div class="note"><strong>Same Python core as the CLI.</strong> The browser uses Pyodide + Pydantic and loads passing records into an in-memory SQLite table. Production MySQL writes are intentionally disabled.</div>
+        </section>
+        <section class="panel outputs" aria-label="Validation results">
+          <div class="section-heading"><span class="step">02</span><h2>Quality report</h2><span class="result-label" id="result-label">READY TO TEST</span></div>
+          <div class="metrics">
+            <div class="metric"><span>ROWS READ</span><strong id="rows-read">—</strong></div>
+            <div class="metric"><span>VALID</span><strong id="rows-valid" class="good">—</strong></div>
+            <div class="metric"><span>REJECTED</span><strong id="rows-rejected" class="bad">—</strong></div>
+            <div class="metric"><span>SQLITE LOADED</span><strong id="rows-loaded">—</strong></div>
+          </div>
+          <div class="submetrics"><span id="deduped">Duplicates dropped: —</span><span id="errors">Errors: —</span></div>
+          <div class="tabs" role="tablist" aria-label="Result view"><button id="reject-tab" role="tab" aria-selected="true" class="active">Rejected rows</button><button id="valid-tab" role="tab" aria-selected="false">Valid rows</button><button id="json-tab" role="tab" aria-selected="false">Summary JSON</button></div>
+          <div class="table-frame"><div id="table-container" class="table-scroll"><div class="empty">Load a sample or select your own CSV to see the data quality report.</div></div></div>
+          <div class="result-footer"><span id="row-caption">Row-level errors include the field and reason.</span><button id="download" class="secondary" disabled>↓ Download rejects CSV</button></div>
+        </section>
+      </div>
+      <footer><span>ETL GUARD / v0.1.2</span><span>LOCAL DEMO · NO FILE UPLOAD · MIT LICENCE</span></footer>
+    </main>
+  </div>
+</body>
+</html>

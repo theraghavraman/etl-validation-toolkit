@@ -1,0 +1,29 @@
+[
+  {
+    "batch_id": "00000000-0000-4000-8000-000000000001",
+    "source_row_number": 4,
+    "field": "__row__",
+    "error_type": "value_error",
+    "error_message": "Value error, end_date must be on or after signup_date",
+    "raw_value": null,
+    "raw_row_json": "{\"Credit Limit\": \"500\", \"Customer ID\": \"C003\", \"Email\": \"claire@example.com\", \"End Date\": \"2025-01-01\", \"Full Name\": \"Claire Chen\", \"Signup Date\": \"2025-02-01\", \"Status\": \"active\"}"
+  },
+  {
+    "batch_id": "00000000-0000-4000-8000-000000000001",
+    "source_row_number": 5,
+    "field": "email",
+    "error_type": "string_pattern_mismatch",
+    "error_message": "String should match pattern '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$'",
+    "raw_value": "bad-at-email",
+    "raw_row_json": "{\"Credit Limit\": \"100\", \"Customer ID\": \"C004\", \"Email\": \"bad-at-email\", \"End Date\": \"\", \"Full Name\": \"Dina Roy\", \"Signup Date\": \"2025-02-03\", \"Status\": \"inactive\"}"
+  },
+  {
+    "batch_id": "00000000-0000-4000-8000-000000000001",
+    "source_row_number": 6,
+    "field": "signup_date",
+    "error_type": "date_from_datetime_parsing",
+    "error_message": "Input should be a valid date or datetime, invalid character in year",
+    "raw_value": "not-a-date",
+    "raw_row_json": "{\"Credit Limit\": \"1000\", \"Customer ID\": \"C005\", \"Email\": \"ed@example.com\", \"End Date\": \"\", \"Full Name\": \"Ed Singh\", \"Signup Date\": \"not-a-date\", \"Status\": \"active\"}"
+  }
+]

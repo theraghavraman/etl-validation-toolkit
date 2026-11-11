@@ -1,0 +1,73 @@
+{
+  "toolkit_version": "0.1.2",
+  "notes": "Fill only after completed tasks; evidence_file must point to an existing nonempty file inside the same evidence directory. Human reviewer still verifies authenticity.",
+  "operational": {
+    "immutable_source": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Source snapshot SHA-256, persisted UUID, and verification log"
+    },
+    "backup_restore_rehearsal": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Signed backup verification + timed restore logs and RPO/RTO"
+    },
+    "shadow_row_reconciliation": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Before/after target counts, source totals, rejected rows and sample keys"
+    },
+    "same_batch_retry": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Repeated identical batch ID and unchanged target checksum/row count"
+    },
+    "changed_input_rejected": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Negative test with altered snapshot and same UUID refused"
+    },
+    "commit_outcome_recovery": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Connection loss/recovery or failure injection plus batch-status evidence"
+    },
+    "scd2_concurrency": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Concurrent SCD2 writers with exactly one active business key"
+    },
+    "rollback_rehearsal": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Injected failure and successful rollback/restore logs"
+    },
+    "monitoring_observation": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Alerting, query performance, metrics and observed stability window"
+    },
+    "supervised_real_target_pilot": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Written change authorization and supervised limited pilot result"
+    }
+  },
+  "approvals": {
+    "data_owner": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Data quality and business reconciliation sign-off"
+    },
+    "database_owner": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Backup/restore, DDL, access control, and performance sign-off"
+    },
+    "operations_owner": {
+      "verified": false,
+      "evidence_file": "",
+      "description": "Monitoring, incident recovery, scheduling and rollback sign-off"
+    }
+  }
+}

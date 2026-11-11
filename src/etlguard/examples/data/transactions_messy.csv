@@ -1,0 +1,7 @@
+Transaction ID,Customer ID,Transaction Date,Type,Amount,Description
+T001,C001,2026-02-01,debit,"$1,250.00",Order paid
+T002,C002,02/02/2026,credit,500.00,Refund
+T003,C003,2026-02-03,debit,0,Invalid zero debit
+T004,C001,bad-date,credit,20.00,Wrong date
+T005,C999,2026-02-04,credit,100,Unknown customer FK (CLI example)
+T001,C001,2026-02-01,debit,"$1,250.00",Order paid

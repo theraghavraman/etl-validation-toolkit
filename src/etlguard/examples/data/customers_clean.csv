@@ -1,0 +1,4 @@
+customer_id,full_name,email,signup_date,end_date,status,credit_limit
+C101,Amina Khan,amina@example.com,2026-01-01,,active,1200.00
+C102,Rohan Das,rohan@example.com,2026-01-02,,active,500.00
+C103,Paula Reed,paula@example.com,2026-01-03,,inactive,200.00

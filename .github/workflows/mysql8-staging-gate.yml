@@ -1,0 +1,63 @@
+name: MySQL 8 Staging Verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mysql8-gate:
+    name: MySQL ${{ matrix.mysql }} / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mysql: ["8.0", "8.4"]
+        python: ["3.11", "3.13"]
+    services:
+      mysql:
+        image: mysql:${{ matrix.mysql }}
+        env:
+          MYSQL_ROOT_PASSWORD: root_for_disposable_tests_only
+          MYSQL_DATABASE: etlguard_ci
+          MYSQL_USER: etlguard_ci
+          MYSQL_PASSWORD: etlguard_ci_local_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_for_disposable_tests_only --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=40
+    env:
+      ETLGUARD_TEST_MYSQL_URL: mysql+pymysql://etlguard_ci:etlguard_ci_local_only@127.0.0.1:3306/etlguard_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install complete development dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Test safety-guard and pilot logic without a database
+        run: python -m unittest discover -s scripts -p 'test_*.py' -v
+      - name: Run disposable MySQL 8 staging and quality gates
+        run: >-
+          python scripts/verify_mysql8_staging.py
+          --confirm-disposable-schema etlguard_ci
+          --execute-tests
+          --report staging-gate-report.json
+      - name: CI-only isolated shadow smoke and idempotent replay
+        env:
+          ETLGUARD_CI_MYSQL_ROOT_URL: mysql+pymysql://root:root_for_disposable_tests_only@127.0.0.1:3306/etlguard_ci
+          ETLGUARD_CI_ALLOW_BOOTSTRAP: DISPOSABLE_MYSQL_ONLY
+        run: python scripts/ci_shadow_smoke.py --staging-report staging-gate-report.json --report shadow-smoke-report.json
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-${{ matrix.mysql }}-python-${{ matrix.python }}-verification
+          path: |
+            staging-gate-report.json
+            mysql8-gate-logs/
+            shadow-smoke-report.json
+          retention-days: 30
+          if-no-files-found: warn

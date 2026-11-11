@@ -1,0 +1,9 @@
+Customer ID,Full Name,Email,Signup Date,End Date,Status,Credit Limit
+ C001 , Alice Kumar ,Alice@EXAMPLE.com,2025/01/05,, ACTIVE ,"$1,200.00"
+C002,Bob Patel,NA,13/01/2025,,active,900.00
+C003,Claire Chen,claire@example.com,2025-02-01,2025-01-01,active,500
+C004,Dina Roy,bad-at-email,2025-02-03,,inactive,100
+C005,Ed Singh,ed@example.com,not-a-date,,active,1000
+ C001 , Alice Kumar ,Alice@EXAMPLE.com,2025/01/05,, ACTIVE ,"$1,200.00"
+C006,Frank Lee,frank@example.com,2025-03-05,,inactive,250
+C007,Gee,NA,2025-03-10,,active,300

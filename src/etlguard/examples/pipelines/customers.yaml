@@ -1,0 +1,26 @@
+pipeline: customers_daily
+source:
+  type: csv
+  path: ../data/customers_messy.csv
+  chunksize: 1000
+model: etlguard.examples.models:Customer
+cleaning:
+  trim: true
+  null_tokens: ["", NA, N/A, "null", "-"]
+  date_columns: [signup_date, end_date]
+  number_columns: [credit_limit]
+  lowercase: [email, status]
+  uppercase: [customer_id]
+  drop_duplicates: true
+checks:
+  unique: [customer_id]
+  max_null_pct: {email: 0.5}
+  expected_row_count: {min: 1, max: 100000}
+target:
+  table: customers
+  mode: upsert
+  key: [customer_id]
+  batch_size: 500
+policy:
+  fail_if_reject_rate_above: 0.05
+output: {directory: ../../../../reports}

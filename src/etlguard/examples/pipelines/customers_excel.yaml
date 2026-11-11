@@ -1,0 +1,16 @@
+pipeline: customers_excel
+source:
+  type: excel
+  path: ../data/customers_messy.xlsx
+  sheet: 0
+  header_row: 1
+model: etlguard.examples.models:Customer
+cleaning:
+  date_columns: [signup_date, end_date]
+  number_columns: [credit_limit]
+  lowercase: [email, status]
+  uppercase: [customer_id]
+checks: {unique: [customer_id]}
+target: {table: customers_from_excel, mode: upsert, key: [customer_id]}
+policy: {fail_if_reject_rate_above: 0.05}
+output: {directory: ../../../../reports}

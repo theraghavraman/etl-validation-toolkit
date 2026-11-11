@@ -1,0 +1,15 @@
+pipeline: transactions_daily
+source: {type: csv, path: ../data/transactions_messy.csv}
+model: etlguard.examples.models:Transaction
+cleaning:
+  date_columns: [transaction_date]
+  number_columns: [amount]
+  lowercase: [type]
+  uppercase: [customer_id, transaction_id]
+checks:
+  unique: [transaction_id]
+  foreign_keys:
+    customer_id: {values: [C001, C002, C003]}
+target: {table: transactions, mode: append, key: [transaction_id]}
+policy: {fail_if_reject_rate_above: 0.05}
+output: {directory: ../../../../reports}
