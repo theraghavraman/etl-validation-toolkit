@@ -293,3 +293,53 @@ def test_mysql8_upgrade_legacy_scd2_requires_explicit_migration(mysql_engine, ta
     loader.upgrade_scd2(Customer, target)
     assert loader.load([candidate()], str(uuid4()), Customer, target).inserted == 1
     assert len(target_rows(mysql_engine, table_name)) == 1
+
+
+def test_distinct_target_writers_do_not_deadlock_shared_metadata(mysql_engine):
+    """Synchronize missing metadata reads to expose REPEATABLE READ gap locks."""
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier, local
+    from sqlalchemy import event
+    from etlguard.loaders.mysql import build_tables
+
+    audit = AuditWriter(mysql_engine)
+    audit.init_db()
+    targets = [TargetSettings(table='it_parallel_' + uuid4().hex[:10], mode='append')
+               for _ in range(3)]
+    for target in targets:
+        table, _ = build_tables(Customer, target)
+        table.metadata.create_all(mysql_engine)
+    from uuid import UUID
+
+    base_id = uuid4().int & ~0xffff
+    batch_ids = [str(UUID(int=base_id + i)) for i in range(3)]
+    ledger_barrier = Barrier(3)
+    audit_barrier = Barrier(3)
+    state = local()
+
+    def synchronize(conn, cursor, statement, params, context, many):
+        if statement.startswith('SELECT etl_batch_commits.') and 'WHERE' in statement:
+            if not getattr(state, 'ledger_seen', False):
+                state.ledger_seen = True
+                ledger_barrier.wait(timeout=10)
+        elif statement.startswith('SELECT etl_run_audit.') and 'WHERE' in statement:
+            if not getattr(state, 'audit_seen', False):
+                state.audit_seen = True
+                audit_barrier.wait(timeout=10)
+
+    event.listen(mysql_engine, 'after_cursor_execute', synchronize)
+    try:
+        def worker(item):
+            target, batch_id = item
+            return MysqlLoader(engine=mysql_engine).load(
+                [candidate()], batch_id, Customer, target)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            results = list(executor.map(worker, zip(targets, batch_ids, strict=True)))
+        assert all(result.loaded == 1 for result in results)
+        assert all(len(target_rows(mysql_engine, target.table)) == 1 for target in targets)
+    finally:
+        event.remove(mysql_engine, 'after_cursor_execute', synchronize)
+        with mysql_engine.begin() as conn:
+            for target in targets:
+                for name in [f'stg_{target.table}', target.table]:
+                    Table(name, MetaData(), autoload_with=conn).drop(conn)

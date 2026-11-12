@@ -11,6 +11,8 @@ substitute for executing the CLI against genuine disposable MySQL 8 staging.
 from __future__ import annotations
 
 import argparse
+from etlguard import __version__
+
 from collections import Counter
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -233,7 +235,7 @@ def reconcile_shadow(manifest_path: Path, staging_report: Path,
     return {
         **results,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "toolkit_version": "0.1.2",
+        "toolkit_version": __version__,
         "phase": "shadow_row_reconciliation",
         "schema": confirmed_schema,
         "shadow_target": manifest["shadow_target"],

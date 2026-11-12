@@ -144,6 +144,12 @@ class MysqlLoader:
             lock = f"etlguard:table:{target.table}"
             acquired = False
             if conn.dialect.name == "mysql":
+                # Missing ledger/audit rows must not take REPEATABLE READ gap
+                # locks: independent target writers would deadlock when they
+                # reserve different UUIDs in the same primary-index gap.
+                # Existing-row locks, unique batch reservations and the target
+                # advisory lock still protect retries and SCD2 ordering.
+                conn.execution_options(isolation_level="READ COMMITTED")
                 value = conn.execute(text("SELECT GET_LOCK(:name, :timeout)"), {
                     "name": lock, "timeout": target.lock_timeout_seconds,
                 }).scalar()

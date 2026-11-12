@@ -8,6 +8,8 @@ It never connects to the production target database.
 from __future__ import annotations
 
 import argparse
+from etlguard import __version__
+
 from datetime import datetime, timezone
 import json
 import os
@@ -191,7 +193,7 @@ def main() -> int:
 
     report = {
         "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-        "toolkit_version": "0.1.2",
+        "toolkit_version": __version__,
         "gate": "mysql8_staging",
         "status": "blocked",
         "mysql8_server_verified": False,

@@ -7,6 +7,8 @@ isolated database and table before allowing any write, using least privilege.
 from __future__ import annotations
 
 import argparse
+from etlguard import __version__
+
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -80,7 +82,7 @@ def plan(config: Path, outdir: Path, requested_table: str | None, allow_shadow_r
     batch_id = str(uuid4())
     manifest: dict[str, Any] = {
         "format_version": 1,
-        "toolkit_version": "0.1.2",
+        "toolkit_version": __version__,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "prepared_not_executed",
         "batch_id": batch_id,

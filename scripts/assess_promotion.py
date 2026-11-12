@@ -7,6 +7,8 @@ run production. All operational evidence must be independently reviewed.
 from __future__ import annotations
 
 import argparse
+from etlguard import __version__
+
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 import json
@@ -35,8 +37,8 @@ def digest_file(path: Path) -> str:
 
 def check_staging(report: dict[str, Any], *, now: datetime | None = None) -> list[str]:
     reasons: list[str] = []
-    if report.get("toolkit_version") != "0.1.2":
-        reasons.append("Staging report version is not v0.1.2")
+    if report.get("toolkit_version") != __version__:
+        reasons.append(f"Staging report version is not v{__version__}")
     if (report.get("status") != "passed" or not report.get("mysql8_server_verified")
             or not report.get("mysql8_integration_executed")):
         reasons.append("A completed, passing real MySQL 8 staging gate is required")
@@ -80,8 +82,8 @@ def check_staging(report: dict[str, Any], *, now: datetime | None = None) -> lis
 def check_operational(evidence: dict[str, Any], evidence_file: Path) -> tuple[list[str], dict[str, str]]:
     reasons: list[str] = []
     hashes: dict[str, str] = {}
-    if evidence.get("toolkit_version") != "0.1.2":
-        reasons.append("Pilot evidence version is not v0.1.2")
+    if evidence.get("toolkit_version") != __version__:
+        reasons.append(f"Pilot evidence version is not v{__version__}")
     for section, keys in [("operational", REQUIRED_OPERATIONAL), ("approvals", REQUIRED_APPROVERS)]:
         entries = evidence.get(section) or {}
         if not isinstance(entries, dict):
@@ -117,7 +119,7 @@ def assess(staging: Path, evidence: Path) -> dict[str, Any]:
     reasons = staging_reasons + operational_reasons
     return {
         "assessed_utc": datetime.now(timezone.utc).isoformat(),
-        "toolkit_version": "0.1.2",
+        "toolkit_version": __version__,
         "decision": "blocked" if reasons else "review_ready_not_authorized",
         "production_approved": False,
         "database_writes_executed": False,

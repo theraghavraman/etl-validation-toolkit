@@ -1,3 +1,13 @@
+# Changelog
+
+## 0.1.3 — 2026-11-12
+
+- Publish the verified browser demo, full PDF manual, current README and clean Python package.
+- Add automated real-browser acceptance to CI and require it before Pages deployment.
+- Use READ COMMITTED for MySQL load connections, preventing missing ledger/audit row gap locks from deadlocking independent target writers. Existing-row locks, unique reservations, atomic audits and per-target locks remain in force.
+- Add a deterministic three-target ledger/audit concurrency regression.
+- Make staging and promotion tooling report the installed runtime version.
+
 ## Application completion — 2026-11-11
 
 - Fixed Pyodide SQLite loading, stale browser reports and browser CSV formula escaping.
@@ -5,7 +15,6 @@
 - Fixed lint/types, Python 3.11 dependency compatibility, escaped MySQL grant parsing and metadata aliases.
 - Verified all four MySQL 8.0/8.4 and Python 3.11/3.13 staging/shadow jobs; see `docs/completion-report.md`.
 
-# Changelog
 
 ## 0.1.2 — production hardening candidate (2026-11-10)
 
@@ -21,7 +30,6 @@
 - Real MySQL 8 testing remains a promotion gate and is NOT certified by local tests.
 
 
-All notable changes to this repository are documented here.
 
 ## [0.1.1] - 2026-11-10
 

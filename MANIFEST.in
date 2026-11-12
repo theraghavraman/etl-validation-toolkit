@@ -6,3 +6,5 @@ recursive-include demo *.html *.css *.js *.zip *.csv
 recursive-include docs *.md *.json *.csv
 recursive-include scripts *.py *.sql
 recursive-include .github/workflows *.yml
+
+recursive-include docs *.pdf *.png
