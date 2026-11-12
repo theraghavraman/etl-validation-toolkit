@@ -2,6 +2,7 @@ name: MySQL 8 Staging Verification
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

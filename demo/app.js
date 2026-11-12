@@ -1,4 +1,3 @@
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs";
 
 const $ = (id) => document.getElementById(id);
 let pyodide;
@@ -6,6 +5,28 @@ let currentText = "";
 let userFileSelected = false;
 let result = null;
 let currentTab = "reject";
+let busy = true;
+let runtimeAttempt = 0;
+
+function setBusy(value) {
+  busy = value;
+  for (const id of ["file", "model", "sample", "validate", "template"]) $(id).disabled = value;
+  $("dropzone").setAttribute("aria-disabled", String(value));
+}
+
+function summaryData() {
+  const { valid_rows, rejected_rows, rejects_csv, valid_csv, ...summary } = result;
+  return summary;
+}
+
+function downloadFile(name, contents, mime) {
+  const blob = new Blob([contents], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url; anchor.download = name; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+setBusy(true);
 
 const setStatus = (status) => { $("status").textContent = status; };
 const setValue = (id, value) => { $(id).textContent = String(value); };
@@ -49,7 +70,7 @@ function clearResult(message = "Load a sample or select your own CSV to see the 
   setValue("errors", "Errors: —");
   setValue("result-label", "READY TO TEST");
   setValue("row-caption", "Row-level errors include the field and reason.");
-  $("download").disabled = true;
+  for (const id of ["download", "download-valid", "download-summary"]) $(id).disabled = true;
   const empty = document.createElement("div");
   empty.className = "empty";
   empty.textContent = message;
@@ -79,8 +100,7 @@ function renderTab(tab) {
     setValue("row-caption", `${result.rows_valid} rows accepted by Pydantic`);
   } else {
     const pre = document.createElement("pre");
-    const { valid_rows, rejected_rows, rejects_csv, ...summary } = result;
-    pre.textContent = JSON.stringify(summary, null, 2);
+    pre.textContent = JSON.stringify(summaryData(), null, 2);
     $("table-container").replaceChildren(pre);
     setValue("row-caption", "Machine-readable batch metrics");
   }
@@ -90,7 +110,7 @@ async function validate() {
   if (!pyodide || !currentText) return;
   clearResult("Validation is running…");
   setValue("result-label", "VALIDATING");
-  $("validate").disabled = true;
+  setBusy(true);
   setStatus("Running Pydantic checks…");
   // Yield one paint frame before synchronous Python processing.
   await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
@@ -106,7 +126,7 @@ async function validate() {
     setValue("deduped", `Duplicates dropped: ${result.duplicates_dropped}`);
     setValue("errors", `Errors: ${result.rejected_rows.length}`);
     setValue("result-label", "VALIDATED LOCALLY");
-    $("download").disabled = false;
+    for (const id of ["download", "download-valid", "download-summary"]) $(id).disabled = false;
     renderTab("reject");
     setStatus("Validation complete");
   } catch (error) {
@@ -117,11 +137,13 @@ async function validate() {
   } finally {
     pyodide.globals.delete("csv_text");
     pyodide.globals.delete("selected_model");
-    $("validate").disabled = false;
+    setBusy(false);
   }
 }
 
 async function sample() {
+  if (!pyodide) return;
+  setBusy(true);
   const model = $("model").value.toLowerCase();
   try {
     const response = await fetch(`samples/${model}s_messy.csv`);
@@ -131,26 +153,28 @@ async function sample() {
     setValue("filename", `${model}s_messy.csv (synthetic sample)`);
     await validate();
   } catch (error) { failInput(`Could not load sample: ${String(error.message || error)}`); }
+  finally { setBusy(false); }
 }
 
 async function loadFile(file) {
-  if (!file) return;
+  if (!file || !pyodide || busy) return;
   if (!file.name.toLowerCase().endsWith(".csv")) { failInput("Select a .csv file"); return; }
   if (file.size > 5_000_000) { failInput("Browser demo accepts CSV files up to 5 MB"); return; }
+  setBusy(true);
   setStatus("Reading CSV…");
   try {
-    currentText = await file.text();
+    currentText = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
     if (!currentText.trim()) throw new Error("The selected CSV is empty");
     userFileSelected = true;
     setValue("filename", file.name);
     await validate();
   } catch (error) {
     failInput(`Could not read CSV: ${String(error.message || error)}`);
-  }
+  } finally { setBusy(false); }
 }
 
-$("dropzone").addEventListener("click", () => $("file").click());
-$("dropzone").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+$("dropzone").addEventListener("click", () => { if (!busy) $("file").click(); });
+$("dropzone").addEventListener("keydown", (e) => { if (!busy && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); $("file").click(); } });
 $("file").addEventListener("change", (e) => loadFile(e.target.files[0]));
 $("dropzone").addEventListener("dragover", (e) => { e.preventDefault(); $("dropzone").classList.add("dragging"); });
 $("dropzone").addEventListener("dragleave", () => $("dropzone").classList.remove("dragging"));
@@ -160,27 +184,45 @@ $("validate").addEventListener("click", validate);
 $("model").addEventListener("change", () => userFileSelected ? validate() : sample());
 for (const tab of ["reject", "valid", "json"]) $(tab + "-tab").addEventListener("click", () => renderTab(tab));
 $("download").addEventListener("click", () => {
-  if (!result) return;
-  const blob = new Blob(["\ufeff", result.rejects_csv], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url; anchor.download = `etlguard_${result.model.toLowerCase()}_rejects.csv`;
-  anchor.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  if (result) downloadFile(`etlguard_${result.model.toLowerCase()}_rejects.csv`, "\ufeff" + result.rejects_csv, "text/csv;charset=utf-8");
+});
+$("download-valid").addEventListener("click", () => {
+  if (result) downloadFile(`etlguard_${result.model.toLowerCase()}_valid.csv`, "\ufeff" + result.valid_csv, "text/csv;charset=utf-8");
+});
+$("download-summary").addEventListener("click", () => {
+  if (result) downloadFile(`etlguard_${result.model.toLowerCase()}_summary.json`, JSON.stringify(summaryData(), null, 2), "application/json");
+});
+$("template").addEventListener("click", () => {
+  if (!pyodide || busy) return;
+  pyodide.globals.set("selected_model", $("model").value);
+  try {
+    const template = pyodide.runPython("from etlguard.browser_demo import schema_template; schema_template(selected_model)");
+    downloadFile(`etlguard_${$("model").value.toLowerCase()}_template.csv`, template, "text/csv;charset=utf-8");
+  } finally { pyodide.globals.delete("selected_model"); }
 });
 
-try {
-  setStatus("Loading Pyodide runtime…");
-  pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
-  setStatus("Loading Pydantic v2 and SQLite…");
-  await pyodide.loadPackage(["pydantic", "sqlite3"]);
-  const response = await fetch("etlguard_core.zip");
-  if (!response.ok) throw new Error("Python core bundle unavailable");
-  pyodide.FS.writeFile("/tmp/etlguard_core.zip", new Uint8Array(await response.arrayBuffer()));
-  pyodide.runPython("import sys; sys.path.insert(0, '/tmp/etlguard_core.zip')");
-  $("validate").disabled = false;
-  setStatus("Python engine ready");
-  await sample();
-} catch (error) {
-  setStatus(`Could not start browser Python: ${String(error).slice(0, 140)}`);
+async function startRuntime() {
+  setBusy(true);
+  $("retry-runtime").hidden = true;
+  clearResult("Loading Python. The first visit downloads the runtime and may take a moment.");
+  try {
+    setStatus("Loading Pyodide runtime…");
+    const { loadPyodide } = await import(`https://cdn.jsdelivr.net/pyodide/v0.29.5/full/pyodide.mjs?attempt=${runtimeAttempt++}`);
+    pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" });
+    setStatus("Loading Pydantic v2 and SQLite…");
+    await pyodide.loadPackage(["pydantic", "sqlite3"]);
+    const response = await fetch("etlguard_core.zip");
+    if (!response.ok) throw new Error("Python core bundle unavailable");
+    pyodide.FS.writeFile("/tmp/etlguard_core.zip", new Uint8Array(await response.arrayBuffer()));
+    pyodide.runPython("import sys; sys.path.insert(0, '/tmp/etlguard_core.zip')");
+    setStatus("Python engine ready");
+    await sample();
+  } catch (error) {
+    pyodide = undefined;
+    setBusy(true);
+    setStatus(`Could not start browser Python: ${String(error).slice(0, 140)}`);
+    $("retry-runtime").hidden = false;
+  }
 }
+$("retry-runtime").addEventListener("click", startRuntime);
+await startRuntime();

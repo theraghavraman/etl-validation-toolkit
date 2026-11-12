@@ -1,5 +1,7 @@
 # Application completion and verification — 11 November 2026
 
+Historical report. For the current release, see [v0.1.4 verification](verification-v0.1.4.md) and [product acceptance](product-completion.md).
+
 The application is implemented, packaged, and available locally. On macOS,
 double-click `Launch ETL Guard.command`. On other platforms, run
 `python scripts/serve_demo.py` from the extracted source directory. The launcher

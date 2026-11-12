@@ -11,7 +11,8 @@ from etlguard.loaders.mysql import build_tables, sqlalchemy_type
 from etlguard.examples.models import Customer
 
 
-@pytest.mark.parametrize("bad", ["users;DROP TABLE x", "stg_test", "etl_run_audit", "bad-name"])
+@pytest.mark.parametrize("bad", ["users;DROP TABLE x", "stg_test", "etl_run_audit", "bad-name",
+                                 "etl_batch_commits", "ETL_BATCH_COMMITS", "STG_test"])
 def test_unsafe_table_names_rejected(bad):
     with pytest.raises(ValidationError):
         TargetSettings(table=bad)
@@ -55,3 +56,9 @@ def test_model_target_columns_exist():
 def test_sqlalchemy_types_unsupported():
     with pytest.raises(ValueError, match="Unsupported"):
         sqlalchemy_type(list[str])
+
+
+@pytest.mark.parametrize("delimiter", ["", "||", "\n", '"'])
+def test_csv_requires_an_unambiguous_single_character_delimiter(delimiter):
+    with pytest.raises(ValidationError, match="delimiter"):
+        SourceSettings(type="csv", path="input.csv", delimiter=delimiter)

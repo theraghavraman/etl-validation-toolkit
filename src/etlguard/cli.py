@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from importlib.resources import files
 from pathlib import Path
 from typing import Annotated
 from uuid import UUID
@@ -17,6 +18,49 @@ from etlguard.profile import profile_csv
 
 app = typer.Typer(help="ETL Guard: fail bad data before it reaches MySQL.", no_args_is_help=True)
 console = Console()
+
+
+def _version(value: bool) -> None:
+    if value:
+        from etlguard import __version__
+        typer.echo(f"ETLGuard {__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def options(
+    version: bool = typer.Option(False, "--version", callback=_version, is_eager=True,
+                                 help="Show the installed version and exit"),
+) -> None:
+    """Clean, validate and load data with explicit quality gates."""
+
+
+@app.command("init")
+def init_pipeline(
+    directory: Annotated[Path, typer.Argument(help="New directory for a runnable example")],
+) -> None:
+    """Create a self-contained example pipeline; never overwrite an existing directory."""
+    import yaml
+
+    if directory.exists():
+        console.print(f"[red]Directory already exists:[/red] {directory}")
+        raise typer.Exit(code=2)
+    examples = files("etlguard.examples")
+    try:
+        directory.mkdir(parents=True, exist_ok=False)
+        (directory / "data").mkdir()
+        for name in ("customers_clean.csv", "customers_messy.csv", "customers_messy.xlsx",
+                     "transactions_messy.csv"):
+            (directory / "data" / name).write_bytes(examples.joinpath("data", name).read_bytes())
+        config = yaml.safe_load(examples.joinpath("pipelines", "customers_clean.yaml").read_text())
+        config["source"]["path"] = "data/customers_clean.csv"
+        config["output"]["directory"] = "reports"
+        (directory / "pipeline.yaml").write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+    except OSError as exc:
+        console.print(f"[red]Could not create example:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[green]Created runnable pipeline:[/green] {directory / 'pipeline.yaml'}")
+    console.print(f"Validate: etlguard validate {directory / 'pipeline.yaml'}")
 
 
 def show_summary(result: RunResult) -> None:
@@ -152,7 +196,7 @@ def batch_status(
                 writer.table.c.batch_id == batch_id
             )).mappings().first() if has_audit else None)
         if row is None:
-            console.print("[yellow]No v0.1.2 committed load found for this batch ID.[/yellow]")
+            console.print("[yellow]No committed load found for this batch ID.[/yellow]")
             if audit_row is not None:
                 console.print(f"Audit status: {audit_row['status']}")
                 console.print(f"Audit details: {audit_row['error_summary']}")

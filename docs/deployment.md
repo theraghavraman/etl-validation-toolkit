@@ -28,8 +28,8 @@ Supply `ETLGUARD_TEST_MYSQL_URL` for a disposable MySQL schema to run integratio
 
 ## Downloadable release
 
-The `release.yml` workflow builds a wheel and source distribution after a version tag is pushed. The tag must match the package version. Release only an exact commit that has passed CI and the staging matrix; do not move a published tag. Attach the manual and verification report as release assets.
+The `release.yml` workflow waits for reusable quality/browser/package checks and all four MySQL/Python staging combinations before building and publishing release files. A failed check prevents publication. The release includes a wheel, tar.gz, portable source ZIP, user guide and SHA256SUMS. The tag must match the package version. Release only an exact commit that has passed CI and the staging matrix; do not move a published tag. Attach the manual and verification report as release assets.
 
-For a local installation, download the wheel from GitHub Releases and run `python -m pip install path/to/etl_validation_toolkit-0.1.3-py3-none-any.whl`.
+For a local installation, download the wheel from GitHub Releases and run `python -m pip install path/to/etl_validation_toolkit-0.1.4-py3-none-any.whl`.
 
 PyPI publishing is not configured. MySQL production rollout is separate from publishing the code and demo; see the operational manual and staging runbook.

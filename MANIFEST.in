@@ -2,6 +2,8 @@ include CHANGELOG.md
 include .env.example
 include docker-compose*.yml
 include Launch*.command
+include Launch*.cmd
+include Launch*.sh
 recursive-include demo *.html *.css *.js *.zip *.csv
 recursive-include docs *.md *.json *.csv
 recursive-include scripts *.py *.sql

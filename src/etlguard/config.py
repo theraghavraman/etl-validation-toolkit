@@ -54,8 +54,8 @@ class SourceSettings(StrictSettings):
             raise ValueError("CSV/Excel sources require path")
         if self.type == "api" and not self.url:
             raise ValueError("API sources require url")
-        if not self.delimiter:
-            raise ValueError("delimiter must not be empty")
+        if len(self.delimiter) != 1 or self.delimiter in {"\r", "\n", '"'}:
+            raise ValueError("delimiter must be one character, excluding newline and quote")
         return self
 
 
@@ -127,7 +127,9 @@ class TargetSettings(StrictSettings):
     def safe_identifier(cls, value: str) -> str:
         if not IDENTIFIER.fullmatch(value) or len(value) > 48:
             raise ValueError("table must be a SQL identifier of at most 48 characters")
-        if value.startswith("stg_") or value == "etl_run_audit":
+        if value.casefold().startswith("stg_") or value.casefold() in {
+            "etl_run_audit", "etl_batch_commits",
+        }:
             raise ValueError("table is a reserved ETL Guard name")
         return value
 

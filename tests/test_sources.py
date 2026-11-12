@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import codecs
+import pytest
 
 from openpyxl import Workbook
 
@@ -70,3 +71,30 @@ def test_excel_sheet_index(tmp_path):
     book.save(tmp_path / "num.xlsx")
     records = list(ExcelSource(SourceSettings(type="excel", path="num.xlsx", sheet=0), tmp_path).read("b"))
     assert records[0].data["Number"] == "1"
+
+
+@pytest.mark.parametrize("text", [
+    "id,amount\nextra,A,1\n", "id,amount\nA\n", "id,id\nA,B\n",
+    "id,\nA,B\n", "id,amount\n\"unterminated,A\n", "",
+])
+def test_csv_ambiguous_or_malformed_input_is_never_silently_repaired(tmp_path, text):
+    (tmp_path / "bad.csv").write_text(text)
+    with pytest.raises((ValueError, __import__("csv").Error)):
+        list(CsvSource(SourceSettings(type="csv", path="bad.csv"), tmp_path).read("b"))
+
+
+def test_csv_preserves_quoted_cells_and_multiline_records(tmp_path):
+    (tmp_path / "quoted.csv").write_text('id,note\nA,"one,two\nthree"\nB,"four"\n')
+    rows = list(CsvSource(SourceSettings(type="csv", path="quoted.csv", chunksize=1), tmp_path).read("b"))
+    assert [r.data for r in rows] == [{"id": "A", "note": "one,two\nthree"}, {"id": "B", "note": "four"}]
+    assert [r.lineage.source_row_number for r in rows] == [2, 3]
+
+
+@pytest.mark.parametrize("headers", [["id", "id"], ["id", ""], ["id", "   "]])
+def test_excel_rejects_ambiguous_headers_before_pandas_renames_them(tmp_path, headers):
+    book = Workbook()
+    book.active.append(headers)
+    book.active.append(["A", "B"])
+    book.save(tmp_path / "bad.xlsx")
+    with pytest.raises(ValueError, match="header"):
+        list(ExcelSource(SourceSettings(type="excel", path="bad.xlsx"), tmp_path).read("b"))

@@ -20,7 +20,7 @@ A new business key creates the first current version. An existing key whose trac
 
 ## Scale and data safety boundaries
 
-CSV is read in chunks using pandas; validation currently materializes validated candidates and cleaned rows in memory to support global uniqueness/null-percentage rules. This is not an out-of-core, distributed ETL engine. Very large feeds need streaming-to-disk or a staging-backed validation design. The REST connector accepts a base GET URL with page, offset or next-link pagination, bounded retries and max-pages safeguards. The browser demo accepts up to 5 MB CSV files and stores validated rows in memory-only SQLite. The frontend never sends the user CSV to a backend, though the Python runtime and Pydantic are downloaded from a public CDN.
+CSV is streamed with Python's strict CSV reader, preserving headers and checking record widths; validation currently materializes validated candidates and cleaned rows in memory to support global uniqueness/null-percentage rules. This is not an out-of-core, distributed ETL engine. Very large feeds need streaming-to-disk or a staging-backed validation design. The REST connector accepts a base GET URL with page, offset or next-link pagination, bounded retries and max-pages safeguards. The browser demo accepts up to 5 MB CSV files and stores validated rows in memory-only SQLite. The frontend never sends the user CSV to a backend, though the Python runtime and Pydantic are downloaded from a public CDN.
 
 ## Security hygiene
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4 — 2026-11-12
+
+- Refuse malformed CSV row widths instead of allowing implicit index inference and silent cell loss. Reject duplicate/empty CSV and Excel headers before parsing can rewrite them.
+- Reject misspelled dataset-check columns and reserve the commit-ledger table name.
+- Honor Pydantic Decimal precision/scale in MySQL DDL and refuse values that would be silently rounded in new or existing columns.
+- Add accepted-row CSV, summary JSON and schema-template downloads to the browser, strict UTF-8 decoding, startup input guards and a runtime Retry button.
+- Add `etlguard --version`, `python -m etlguard` and non-overwriting `etlguard init` to create runnable pipelines after wheel installation.
+- Add Windows/Linux source launchers, a portable source ZIP and installed-wheel acceptance.
+- Require quality, browser, packaging and all four MySQL/Python matrix checks before publishing a tagged release.
+
 ## 0.1.3 — 2026-11-12
 
 - Publish the verified browser demo, full PDF manual, current README and clean Python package.

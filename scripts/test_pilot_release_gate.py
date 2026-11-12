@@ -11,6 +11,8 @@ import unittest
 
 import yaml
 
+from etlguard import __version__
+
 from assess_promotion import (
     REQUIRED_APPROVERS, REQUIRED_AUTOMATED, REQUIRED_OPERATIONAL,
     assess, check_staging, check_operational,
@@ -45,7 +47,7 @@ class PilotGateTests(unittest.TestCase):
 
     def staging_ok(self):
         return {
-            "toolkit_version": "0.1.3", "status": "passed", "mysql8_server_verified": True,
+            "toolkit_version": __version__, "status": "passed", "mysql8_server_verified": True,
             "mysql8_integration_executed": True,
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "preflight": {"server_version": "8.4.7", "default_storage_engine": "InnoDB",
@@ -131,7 +133,7 @@ class PilotGateTests(unittest.TestCase):
         self.assertTrue(check_staging(report))
 
     def test_missing_operational_evidence_is_blocked(self):
-        template = {"toolkit_version": "0.1.3", "operational": {}, "approvals": {}}
+        template = {"toolkit_version": __version__, "operational": {}, "approvals": {}}
         reasons, hashes = check_operational(template, self.root / "evidence.json")
         self.assertEqual(len(reasons), len(REQUIRED_OPERATIONAL) + len(REQUIRED_APPROVERS))
         self.assertEqual(hashes, {})
@@ -140,7 +142,7 @@ class PilotGateTests(unittest.TestCase):
         outside = self.root.parent / "outside.log"
         outside.write_text("fake", encoding="utf-8")
         self.addCleanup(outside.unlink)
-        evidence = {"toolkit_version": "0.1.3", "operational": {"immutable_source": {
+        evidence = {"toolkit_version": __version__, "operational": {"immutable_source": {
             "verified": True, "evidence_file": "../outside.log"}}, "approvals": {}}
         reasons, _ = check_operational(evidence, self.root / "evidence.json")
         self.assertTrue(any("outside directory" in reason for reason in reasons))
@@ -151,7 +153,7 @@ class PilotGateTests(unittest.TestCase):
         artifact = self.root / "proof.log"
         artifact.write_text("dummy test fixture; independent verification still required")
         data = {
-            "toolkit_version": "0.1.3",
+            "toolkit_version": __version__,
             "operational": {name: {"verified": True, "evidence_file": "proof.log"}
                             for name in REQUIRED_OPERATIONAL},
             "approvals": {name: {"verified": True, "evidence_file": "proof.log"}
@@ -197,7 +199,7 @@ class PilotGateTests(unittest.TestCase):
     def test_shadow_execute_refuses_failed_staging_gate(self):
         plan(self.yaml, self.out, None, False)
         staging = self.root / "staging.json"
-        staging.write_text(json.dumps({"status": "blocked", "toolkit_version": "0.1.3"}),
+        staging.write_text(json.dumps({"status": "blocked", "toolkit_version": __version__}),
                            encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "Staging gate is not fully passed"):
             run_pilot(self.out / "shadow-manifest.json", True, "etlguard_shadow_ci",

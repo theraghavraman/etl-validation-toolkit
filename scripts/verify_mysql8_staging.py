@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail-closed MySQL 8 staging gate for ETL Guard v0.1.2.
+"""Fail-closed MySQL 8 staging gate for ETLGuard.
 
 This runner creates/drops test tables indirectly through pytest integration tests.
 It is intentionally restricted to disposable schemas that are explicitly confirmed.
@@ -181,7 +181,7 @@ def execute_gate(project: Path, environment: dict[str, str], logs: Path) -> list
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", type=Path, default=Path(__file__).resolve().parent.parent,
-                        help="Path to extracted v0.1.2 source project")
+                        help="Path to the ETLGuard source project")
     parser.add_argument("--confirm-disposable-schema", required=True,
                         help="Exact disposable database name (for example etlguard_ci)")
     parser.add_argument("--allow-remote", action="store_true",

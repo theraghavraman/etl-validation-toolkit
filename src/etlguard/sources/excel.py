@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Iterator
 
 from etlguard.config import SourceSettings
-from etlguard.sources.base import SourceRecord, lineage
+from etlguard.sources.base import SourceRecord, lineage, validate_headers
 
 
 class ExcelSource:
@@ -20,6 +20,13 @@ class ExcelSource:
         import pandas as pd
 
         cfg = self.settings
+        # pandas renames duplicate headers (e.g. id -> id.1), hiding ambiguous input.
+        header = pd.read_excel(
+            self.path, sheet_name=cfg.sheet, header=None,
+            skiprows=cfg.skip_rows + cfg.header_row - 1, nrows=1,
+            dtype=str, keep_default_na=False, na_filter=False, engine="openpyxl",
+        )
+        validate_headers([str(value) for value in header.iloc[0]] if len(header) else None)
         frame = pd.read_excel(
             self.path,
             sheet_name=cfg.sheet,

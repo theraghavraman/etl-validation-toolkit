@@ -33,6 +33,12 @@ def test_browser_invalid_csv_headers():
         validate_csv("data\n", "Unknown")
     with pytest.raises(ValueError, match="more fields than its header"):
         validate_csv("customer_id,full_name\nC001,Alice,extra\n", "Customer")
+    with pytest.raises(ValueError, match="fewer fields than its header"):
+        validate_csv("customer_id,full_name\nC001\n", "Customer")
+    with pytest.raises(ValueError, match="Duplicate"):
+        validate_csv("customer_id,customer_id\nC001,C002\n", "Customer")
+    with pytest.raises(ValueError, match="header"):
+        validate_csv("customer_id,\nC001,Alice\n", "Customer")
 
 
 def test_browser_reject_download_escapes_formulas_but_preserves_json(example_dir):
@@ -44,3 +50,12 @@ def test_browser_reject_download_escapes_formulas_but_preserves_json(example_dir
                     if row["field"] == "email")
     assert raw["raw_value"] == "=1+1"
     assert exported["raw_value"] == "'=1+1"
+
+
+def test_browser_counts_blank_records_and_preserves_multiline_cells(example_dir):
+    text = (example_dir / "data" / "customers_clean.csv").read_text()
+    text = text.replace("Amina Khan", '"Amina\nKhan"') + "\n"
+    result = json.loads(validate_csv(text))
+    assert (result["rows_read"], result["rows_valid"], result["rows_rejected"]) == (4, 3, 1)
+    assert result["valid_rows"][0]["full_name"] == "Amina\nKhan"
+    assert {row["source_row_number"] for row in result["rejected_rows"]} == {5}

@@ -68,6 +68,18 @@ def main() -> None:
             exported = (args.output / download.suggested_filename).read_text(encoding="utf-8-sig")
             assert "raw_row_json" in exported and "error_message" in exported
             checks.append("Reject CSV download")
+            for button, suffix in [("download-valid", ".csv"), ("download-summary", ".json"), ("template", ".csv")]:
+                with page.expect_download() as event:
+                    page.locator("#" + button).click()
+                downloaded = event.value
+                assert downloaded.suggested_filename.endswith(suffix)
+                downloaded.save_as(str(args.output / downloaded.suggested_filename))
+            summary_download = json.loads((args.output / "etlguard_customer_summary.json").read_text())
+            assert summary_download["rows_valid"] == 4
+            assert "valid_csv" not in summary_download
+            accepted_csv = (args.output / "etlguard_customer_valid.csv").read_text(encoding="utf-8-sig")
+            assert len(list(__import__("csv").DictReader(__import__("io").StringIO(accepted_csv)))) == 4
+            checks.append("Accepted-row CSV, summary JSON and schema-template downloads")
             page.locator("#model").select_option("Transaction")
             counts(6, 3, 2)
             checks.append("Transaction sample: 6 read, 3 valid, 2 rejected, 1 duplicate")
@@ -90,6 +102,11 @@ def main() -> None:
                 expect(page.locator("#rows-valid")).to_have_text("—")
                 checks.append(f"Rejected {name}: cleared old results")
             page.locator("#file").set_input_files({
+                "name": "nonutf8.csv", "mimeType": "text/csv", "buffer": b"id,name\nA,\xff\n",
+            })
+            expect(page.locator("#status")).to_contain_text("Could not read CSV")
+            checks.append("Invalid UTF-8 rejected without replacement characters")
+            page.locator("#file").set_input_files({
                 "name": "broken.csv", "mimeType": "text/csv",
                 "buffer": b"customer_id,full_name\nC001,Alice,extra\n",
             })
@@ -104,6 +121,16 @@ def main() -> None:
             assert not errors, errors
             assert not uploads, uploads
             checks.append("No uncaught JavaScript errors or CSV upload requests")
+            retry = browser.new_page()
+            retry.route("**/pyodide.mjs*", lambda route: route.abort())
+            retry.goto(url)
+            expect(retry.locator("#retry-runtime")).to_be_visible(timeout=30_000)
+            expect(retry.locator("#file")).to_be_disabled()
+            retry.unroute("**/pyodide.mjs*")
+            retry.locator("#retry-runtime").click()
+            expect(retry.locator("#status")).to_have_text("Validation complete", timeout=180_000)
+            checks.append("Runtime download failure recovers using Retry without a page reload")
+            retry.close()
             browser.close()
     finally:
         if server:

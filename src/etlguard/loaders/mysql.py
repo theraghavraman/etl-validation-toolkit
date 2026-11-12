@@ -74,6 +74,20 @@ def _model_columns(model: type[BaseModel]) -> list[Column[Any]]:
                 max_length = getattr(constraint, "max_length", None)
                 if isinstance(max_length, int) and max_length > 0:
                     column_type = String(max_length)
+        if isinstance(column_type, Numeric) and (
+            info.annotation is Decimal or Decimal in get_args(info.annotation)
+        ):
+            precision, scale = 18, 2
+            for constraint in info.metadata:
+                max_digits = getattr(constraint, "max_digits", None)
+                decimal_places = getattr(constraint, "decimal_places", None)
+                if isinstance(max_digits, int):
+                    precision = max_digits
+                if isinstance(decimal_places, int):
+                    scale = decimal_places
+            if not 1 <= precision <= 65 or not 0 <= scale <= min(30, precision):
+                raise ValueError(f"Unsupported MySQL DECIMAL precision/scale for {name}")
+            column_type = Numeric(precision, scale)
         cols.append(Column(name, column_type, nullable=nullable))
     return cols
 
@@ -276,6 +290,32 @@ class MysqlLoader:
                 "ON DUPLICATE KEY UPDATE could change a different business record"
             )
 
+    @staticmethod
+    def _check_decimal_storage(candidates: list[Candidate], table: Table) -> None:
+        """MySQL may round DECIMAL values without raising, even in strict SQL mode."""
+        for column in table.c:
+            kind = column.type
+            if not isinstance(kind, Numeric) or kind.scale is None or kind.precision is None:
+                continue
+            for candidate in candidates:
+                value = candidate.data.get(column.name)
+                if not isinstance(value, Decimal):
+                    continue
+                if not value.is_finite():
+                    raise ValueError(f"Non-finite decimal in {column.name}")
+                digits = list(value.as_tuple().digits)
+                exponent = int(value.as_tuple().exponent)
+                while digits and digits[-1] == 0:
+                    digits.pop()
+                    exponent += 1
+                fractional = max(-exponent, 0) if digits else 0
+                integer = max(len(digits) + exponent, 0) if digits else 0
+                if fractional > kind.scale or integer > kind.precision - kind.scale:
+                    raise ValueError(
+                        f"Decimal in {column.name} does not fit DECIMAL"
+                        f"({kind.precision},{kind.scale}); refusing silent rounding"
+                    )
+
     def load(
         self, candidates: list[Candidate], batch_id: str,
         model: type[BaseModel], target: TargetSettings, *,
@@ -316,6 +356,8 @@ class MysqlLoader:
                 target_table = Table(target.table, MetaData(), autoload_with=conn)
                 stage_table = Table(f"stg_{target.table}", MetaData(), autoload_with=conn)
                 self._check_schema(model, target, target_table, stage_table)
+                self._check_decimal_storage(candidates, target_table)
+                self._check_decimal_storage(candidates, stage_table)
                 self._check_transactional_storage([
                     target.table, stage_table.name, auditor.table.name, auditor.commits.name,
                 ])

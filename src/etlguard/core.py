@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from etlguard.checks import DatasetChecker, DatasetIssue
 from etlguard.cleaning import Cleaner
-from etlguard.config import ChecksSettings, CleaningSettings
+from etlguard.config import ChecksSettings, CleaningSettings, ConfigError
 from etlguard.rejects import RejectedRow, reject
 from etlguard.sources.base import SourceRecord
 from etlguard.validation import Candidate, RowValidator
@@ -60,6 +60,10 @@ class ValidationEngine:
         checks: ChecksSettings,
         base_dir: Path = Path("."),
     ):
+        referenced = set(checks.unique) | set(checks.foreign_keys) | set(checks.max_null_pct)
+        unknown = referenced - set(model.model_fields)
+        if unknown:
+            raise ConfigError("Dataset checks reference unknown model fields: " + ", ".join(sorted(unknown)))
         self.cleaner = Cleaner(cleaning)
         self.validator = RowValidator(model)
         self.checker = DatasetChecker(checks, base_dir, drop_duplicates=cleaning.drop_duplicates)

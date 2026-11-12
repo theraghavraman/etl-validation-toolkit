@@ -14,7 +14,17 @@ from etlguard.config import ChecksSettings, CleaningSettings
 from etlguard.core import ValidationEngine
 from etlguard.examples.models import Customer, Transaction
 from etlguard.rejects import REJECT_COLUMNS, _safe_csv_cell
-from etlguard.sources.base import Lineage, SourceRecord
+from etlguard.sources.base import Lineage, SourceRecord, validate_headers
+
+
+def schema_template(selected_model: str = "Customer") -> str:
+    """Return a header-only CSV that a visitor can fill using the documented schema."""
+    if selected_model not in {"Customer", "Transaction"}:
+        raise ValueError("Unknown demonstration model")
+    model = Customer if selected_model == "Customer" else Transaction
+    buffer = io.StringIO()
+    csv.writer(buffer).writerow(list(model.model_fields))
+    return buffer.getvalue()
 
 
 def validate_csv(csv_text: str, selected_model: str = "Customer") -> str:
@@ -29,17 +39,21 @@ def validate_csv(csv_text: str, selected_model: str = "Customer") -> str:
         uppercase=["customer_id"] if is_customer else ["customer_id", "transaction_id"],
     )
     checks = ChecksSettings(unique=["customer_id"] if is_customer else ["transaction_id"])
-    reader = csv.DictReader(io.StringIO(csv_text.lstrip("\ufeff")))
-    if not reader.fieldnames:
-        raise ValueError("CSV is missing a header row")
+    reader = csv.reader(io.StringIO(csv_text.lstrip("\ufeff")), strict=True)
+    headers = validate_headers(next(reader, None))
     batch_id = "browser-demo"
 
     def records() -> Any:
-        for row in reader:
-            if None in row:
+        for row_number, values in enumerate(reader, start=2):
+            if not values:
+                values = [""] * len(headers)
+            if len(values) > len(headers):
                 raise ValueError("A CSV row has more fields than its header")
+            if len(values) < len(headers):
+                raise ValueError("A CSV row has fewer fields than its header")
             yield SourceRecord(
-                row, Lineage("browser-upload", reader.line_num, datetime.now(timezone.utc), batch_id)
+                dict(zip(headers, values, strict=True)),
+                Lineage("browser-upload", row_number, datetime.now(timezone.utc), batch_id),
             )
 
     core = ValidationEngine(model, settings, checks, Path(".")).run(records())
@@ -68,6 +82,11 @@ def validate_csv(csv_text: str, selected_model: str = "Customer") -> str:
     writer.writeheader()
     writer.writerows({key: _safe_csv_cell(value) for key, value in row.items()}
                      for row in reject_rows)
+    accepted_buffer = io.StringIO()
+    accepted_writer = csv.DictWriter(accepted_buffer, fieldnames=columns)
+    accepted_writer.writeheader()
+    accepted_writer.writerows({key: _safe_csv_cell(value) for key, value in row.items()}
+                             for row in valid_rows)
     return json.dumps({
         "model": selected_model,
         "batch_id": batch_id,
@@ -81,4 +100,5 @@ def validate_csv(csv_text: str, selected_model: str = "Customer") -> str:
         "valid_rows": valid_rows,
         "rejected_rows": reject_rows,
         "rejects_csv": rejects_buffer.getvalue(),
+        "valid_csv": accepted_buffer.getvalue(),
     }, ensure_ascii=False, default=str)

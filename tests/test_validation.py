@@ -1,11 +1,23 @@
 from __future__ import annotations
 
+import pytest
 
 from etlguard.checks import DatasetChecker
 from etlguard.config import ChecksSettings, CleaningSettings, ForeignKeySettings, RowCountSettings
 from etlguard.core import ValidationEngine
 from etlguard.examples.models import Customer, Transaction
 from etlguard.validation import RowValidator
+
+
+@pytest.mark.parametrize("checks", [
+    ChecksSettings(unique=["customerid"]),
+    ChecksSettings(max_null_pct={"emali": 0.1}),
+    ChecksSettings(foreign_keys={"customerid": ForeignKeySettings(values=["C001"])}),
+])
+def test_misspelled_dataset_columns_fail_before_reading_any_rows(checks):
+    from etlguard.config import ConfigError
+    with pytest.raises(ConfigError, match="unknown model fields"):
+        ValidationEngine(Customer, CleaningSettings(), checks)
 
 
 def test_valid_customer_model_and_python_types(record_factory, customer_raw):

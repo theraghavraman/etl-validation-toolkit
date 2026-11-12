@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)
 [![MIT License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-[**Try the live demo →**](https://theraghavraman.github.io/etl-validation-toolkit/) · [Full interactive manual (PDF)](docs/ETLGuard-v0.1.3-Manual.pdf) · [Downloads](https://github.com/theraghavraman/etl-validation-toolkit/releases/latest) · [Configuration reference](docs/configuration.md)
+[**Try the live demo →**](https://theraghavraman.github.io/etl-validation-toolkit/) · [User guide](docs/USER_GUIDE.md) · [Downloads](https://github.com/theraghavraman/etl-validation-toolkit/releases/latest) · [Configuration reference](docs/configuration.md)
 
 ETLGuard is a Python toolkit for cleaning CSV, Excel and REST API feeds, validating records with Pydantic, and loading accepted rows into MySQL. Each run produces a summary and rejected records with the exact field and reason. A YAML pipeline defines the data contract, cleaning rules, quality thresholds and destination.
 
@@ -28,7 +28,7 @@ It brings familiar ETL controls—business keys, rejected rows, source/target re
 
 ## Try it without installing Python
 
-Open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/). Wait for the Python runtime to load, select Customer or Transaction, then load the sample or drop a UTF-8 CSV up to 5 MB. Inspect accepted/rejected rows and download the reject report.
+Open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/). Wait for the Python runtime to load, select Customer or Transaction, then load the sample or drop a UTF-8 CSV up to 5 MB. Inspect accepted/rejected rows and download accepted CSV, rejected CSV or summary JSON. Download a schema template to prepare your own feed. If runtime startup fails, click **Retry loading Python**.
 
 CSV contents are processed inside the browser. Startup downloads Pyodide and its libraries from a CDN. The demo uses SQLite in memory; MySQL connections and API ingestion are available through the Python package.
 
@@ -41,12 +41,20 @@ cd etl-validation-toolkit
 python3 scripts/serve_demo.py
 ```
 
-On macOS, you can also double-click `Launch ETL Guard.command`. The launcher chooses an available local port. Keep its terminal open while using the app; press Ctrl+C to stop it.
+Source downloads also include `Launch ETL Guard.command` for macOS, `Launch ETL Guard.cmd` for Windows and `Launch ETL Guard.sh` for Linux. The launcher chooses an available local port. Keep its terminal open while using the app; press Ctrl+C to stop it.
 </details>
 
 ## Install and validate
 
-Requires Python 3.11 or newer. Validation works without a database.
+Requires Python 3.11 or newer. Validation works without a database. Read the [user guide](docs/USER_GUIDE.md) for a complete walkthrough.
+
+After installing a release wheel, create a working example with:
+
+```bash
+etlguard --version
+etlguard init my-pipeline
+etlguard validate my-pipeline/pipeline.yaml
+```
 
 ```bash
 git clone https://github.com/theraghavraman/etl-validation-toolkit.git
@@ -132,7 +140,7 @@ etlguard run path/to/pipeline.yaml --batch-id 11111111-1111-4111-8111-1111111111
 etlguard batch-status 11111111-1111-4111-8111-111111111111
 ```
 
-MySQL tables must use InnoDB. Writers to a target are serialized with an advisory lock; SCD2 also has a unique active-row constraint. Version 0.1.3 uses READ COMMITTED on load connections to avoid metadata gap-lock deadlocks between different targets. Existing table migrations and writes from other systems require coordination.
+MySQL tables must use InnoDB. Writers to a target are serialized with an advisory lock; SCD2 also has a unique active-row constraint. Since version 0.1.3, ETLGuard uses READ COMMITTED on load connections to avoid metadata gap-lock deadlocks between different targets. Existing table migrations and writes from other systems require coordination.
 
 ## Architecture
 
@@ -184,10 +192,12 @@ Without `ETLGUARD_TEST_MYSQL_URL`, local MySQL integration tests are skipped. Gi
 
 For browser checks: `python -m pip install -e ".[browser]"`, `python -m playwright install chromium`, then `python scripts/verify_browser.py`.
 
-Read [the release verification report](docs/verification-v0.1.3.md) for the checks performed on this release.
+Read [the release verification report](docs/verification-v0.1.4.md) for the checks performed on this release.
 
 ## Documentation
 
+- [User guide: installation, schemas, browser exports, CLI and MySQL](docs/USER_GUIDE.md)
+- [Product scope and acceptance](docs/product-completion.md)
 - [Full interactive engineering and operations manual](docs/ETLGuard-v0.1.3-Manual.pdf)
 - [Configuration reference](docs/configuration.md)
 - [Deployment and release](docs/deployment.md)
@@ -197,8 +207,8 @@ Read [the release verification report](docs/verification-v0.1.3.md) for the chec
 
 ## Scope and limits
 
-CSV reading is chunked, but accepted records and dataset checks are held in memory. This version suits ordinary batch jobs; large feeds need a measured memory budget. The browser handles CSV only, displays up to 250 rows per view, and keeps its SQLite data only for the current run.
+CSV reading is streamed, but accepted records and dataset checks are held in memory. This version suits ordinary batch jobs; large feeds need a measured memory budget. The browser handles CSV only, displays up to 250 rows per view, and keeps its SQLite data only for the current run.
 
-Public release and successful synthetic tests establish the demonstrated behavior. The attached manual's production disposition remains applicable: an actual business database needs its own target pilot, recovery checks and owner approval. Earlier v0.1.2 reports are historical evidence.
+Public release and successful synthetic tests establish the demonstrated behavior. The v0.1.3 engineering manual remains a reference for database operations; the current user guide covers v0.1.4. A business database deployment needs target-specific load, recovery and performance checks. Earlier v0.1.2 reports are historical evidence.
 
 Developed by [Raghav Raman](https://github.com/theraghavraman). MIT license; see [LICENSE](LICENSE) and [CHANGELOG](CHANGELOG.md).
