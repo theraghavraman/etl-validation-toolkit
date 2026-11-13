@@ -1,6 +1,45 @@
 # ETLGuard
 
-**Catch bad data before it reaches your database.**
+**Bad rows in a CSV, Excel or API feed reach the database unnoticed; ETLGuard stops them first and tells you which field failed and why.**
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[CSV / Excel / REST API] --> B[Source records + lineage]
+    B --> C[Cleaning]
+    C --> D[Pydantic + dataset checks]
+    D -->|accepted| E[MySQL staging]
+    E --> F[Append / replace / upsert / SCD2]
+    F --> G[Count reconciliation]
+    G --> H[Atomic audit + batch ledger]
+    D -->|rejected| I[CSV + JSON rejects]
+    H --> J[Run summary]
+    I --> J
+    D -. shared engine .-> K[Browser: Pyodide + SQLite]
+```
+
+## Quickstart
+
+No install: open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/) and load the sample feed.
+
+From source, with Python 3.11 or newer. Validation needs no database:
+
+```bash
+git clone https://github.com/theraghavraman/etl-validation-toolkit.git
+```
+
+```bash
+python -m pip install ./etl-validation-toolkit
+```
+
+```bash
+etlguard validate etl-validation-toolkit/src/etlguard/examples/pipelines/customers_clean.yaml
+```
+
+That prints a run summary and writes a JSON summary and a rejects report to `etl-validation-toolkit/reports/`. Swap in `customers.yaml` to see a dirty feed fail with exit code 1. To load into MySQL, see [Load into MySQL](#load-into-mysql).
+
+---
 
 [![CI](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Ftheraghavraman.github.io%2Fetl-validation-toolkit%2Fcoverage.json)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
@@ -142,22 +181,9 @@ etlguard batch-status 11111111-1111-4111-8111-111111111111
 
 MySQL tables must use InnoDB. Writers to a target are serialized with an advisory lock; SCD2 also has a unique active-row constraint. Since version 0.1.3, ETLGuard uses READ COMMITTED on load connections to avoid metadata gap-lock deadlocks between different targets. Existing table migrations and writes from other systems require coordination.
 
-## Architecture
+## Architecture notes
 
-```mermaid
-flowchart LR
-    A[CSV / Excel / REST API] --> B[Source records + lineage]
-    B --> C[Cleaning]
-    C --> D[Pydantic + dataset checks]
-    D -->|accepted| E[MySQL staging]
-    E --> F[Append / replace / upsert / SCD2]
-    F --> G[Count reconciliation]
-    G --> H[Atomic audit + batch ledger]
-    D -->|rejected| I[CSV + JSON rejects]
-    H --> J[Run summary]
-    I --> J
-    D -. shared engine .-> K[Browser: Pyodide + SQLite]
-```
+The diagram is at the [top of this page](#architecture).
 
 The validation core has no MySQL imports. Database loading is imported only when needed. The browser bundles the shared Python modules and calls the same engine used by the CLI.
 
