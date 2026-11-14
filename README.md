@@ -2,45 +2,6 @@
 
 **Bad rows in a CSV, Excel or API feed reach the database unnoticed; ETLGuard stops them first and tells you which field failed and why.**
 
-## Architecture
-
-```mermaid
-flowchart LR
-    A[CSV / Excel / REST API] --> B[Source records + lineage]
-    B --> C[Cleaning]
-    C --> D[Pydantic + dataset checks]
-    D -->|accepted| E[MySQL staging]
-    E --> F[Append / replace / upsert / SCD2]
-    F --> G[Count reconciliation]
-    G --> H[Atomic audit + batch ledger]
-    D -->|rejected| I[CSV + JSON rejects]
-    H --> J[Run summary]
-    I --> J
-    D -. shared engine .-> K[Browser: Pyodide + SQLite]
-```
-
-## Quickstart
-
-No install: open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/) and load the sample feed.
-
-From source, with Python 3.11 or newer. Validation needs no database:
-
-```bash
-git clone https://github.com/theraghavraman/etl-validation-toolkit.git
-```
-
-```bash
-python -m pip install ./etl-validation-toolkit
-```
-
-```bash
-etlguard validate etl-validation-toolkit/src/etlguard/examples/pipelines/customers_clean.yaml
-```
-
-That prints a run summary and writes a JSON summary and a rejects report to `etl-validation-toolkit/reports/`. Swap in `customers.yaml` to see a dirty feed fail with exit code 1. To load into MySQL, see [Load into MySQL](#load-into-mysql).
-
----
-
 [![CI](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Ftheraghavraman.github.io%2Fetl-validation-toolkit%2Fcoverage.json)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)
@@ -54,65 +15,27 @@ It brings familiar ETL controls—business keys, rejected rows, source/target re
 
 ![ETLGuard interactive data quality lab](docs/images/demo.png)
 
-## What it does
+## Quickstart
 
-- **Read:** CSV, Excel and JSON REST APIs with pagination and retries.
-- **Clean:** whitespace, column names, null tokens, dates, numbers, case and accepted duplicates.
-- **Validate:** typed Pydantic models, cross-field rules, business-key uniqueness, reference sets, row counts and null thresholds.
-- **Explain rejects:** CSV/JSON reports retain the source row, original data, field and error reason. Multiple errors on one record still count as one rejected row.
-- **Load MySQL:** append, transactional replacement, upsert and SCD Type 2 history through staging tables.
-- **Reconcile:** rollback on a source/target count mismatch. Commit target changes, success audit and batch ledger in the same transaction.
-- **Retry safely:** a repeated batch UUID with the same request returns the committed result; changed input or configuration using that UUID is refused.
-- **Try in a browser:** the same validation engine runs in Pyodide, with an in-memory SQLite destination.
+No install: open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/), wait for the Python runtime to load, select Customer or Transaction, then load the sample or drop a UTF-8 CSV up to 5 MB.
 
-## Try it without installing Python
-
-Open the [live demo](https://theraghavraman.github.io/etl-validation-toolkit/). Wait for the Python runtime to load, select Customer or Transaction, then load the sample or drop a UTF-8 CSV up to 5 MB. Inspect accepted/rejected rows and download accepted CSV, rejected CSV or summary JSON. Download a schema template to prepare your own feed. If runtime startup fails, click **Retry loading Python**.
-
-CSV contents are processed inside the browser. Startup downloads Pyodide and its libraries from a CDN. The demo uses SQLite in memory; MySQL connections and API ingestion are available through the Python package.
-
-<details>
-<summary>Run the browser demo locally</summary>
+From source, with Python 3.11 or newer. Validation needs no database:
 
 ```bash
 git clone https://github.com/theraghavraman/etl-validation-toolkit.git
 cd etl-validation-toolkit
-python3 scripts/serve_demo.py
-```
+python -m pip install .
 
-Source downloads also include `Launch ETL Guard.command` for macOS, `Launch ETL Guard.cmd` for Windows and `Launch ETL Guard.sh` for Linux. The launcher chooses an available local port. Keep its terminal open while using the app; press Ctrl+C to stop it.
-</details>
-
-## Install and validate
-
-Requires Python 3.11 or newer. Validation works without a database. Read the [user guide](docs/USER_GUIDE.md) for a complete walkthrough.
-
-After installing a release wheel, create a working example with:
-
-```bash
-etlguard --version
-etlguard init my-pipeline
-etlguard validate my-pipeline/pipeline.yaml
-```
-
-```bash
-git clone https://github.com/theraghavraman/etl-validation-toolkit.git
-cd etl-validation-toolkit
-python3 -m venv .venv
-source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-
-# Passing feed: exit 0; writes JSON summary and reject reports
+# Passing feed: exit 0; writes a JSON summary and reject reports to reports/
 etlguard validate src/etlguard/examples/pipelines/customers_clean.yaml
 
-# Dirty feed: intentionally exits 1 because its reject rate exceeds the threshold
+# Dirty feed: exits 1 because its reject rate is above the threshold
 etlguard validate src/etlguard/examples/pipelines/customers.yaml
 
 etlguard profile src/etlguard/examples/data/customers_messy.csv
 ```
 
-You can also install the wheel from [Releases](https://github.com/theraghavraman/etl-validation-toolkit/releases). This project is not currently published on PyPI.
+To start your own pipeline from an installed package, run `etlguard init my-pipeline`, then `etlguard validate my-pipeline/pipeline.yaml`. The wheel is on the [Releases](https://github.com/theraghavraman/etl-validation-toolkit/releases) page; this project is not on PyPI. To load into MySQL, see [Load into MySQL](#load-into-mysql).
 
 ### Example result
 
@@ -124,7 +47,31 @@ The bundled messy customer feed gives:
 
 The rejected records contain an invalid email, an invalid date and an invalid date interval. The configured 5% rejection limit fails this batch before loading. See the [sample rejects CSV](docs/sample_rejects.csv) and [JSON](docs/sample_rejects.json).
 
-### Configure a pipeline
+## What it does
+
+- **Read:** CSV, Excel and JSON REST APIs with pagination and retries.
+- **Clean:** whitespace, column names, null tokens, dates, numbers, case and accepted duplicates.
+- **Validate:** typed Pydantic models, cross-field rules, business-key uniqueness, reference sets, row counts and null thresholds.
+- **Explain rejects:** CSV/JSON reports retain the source row, original data, field and error reason. Multiple errors on one record still count as one rejected row.
+- **Load MySQL:** append, transactional replacement, upsert and SCD Type 2 history through staging tables.
+- **Reconcile:** rollback on a source/target count mismatch. Commit target changes, success audit and batch ledger in the same transaction.
+- **Retry safely:** a repeated batch UUID with the same request returns the committed result; changed input or configuration using that UUID is refused.
+- **Try in a browser:** the same validation engine runs in Pyodide, with an in-memory SQLite destination.
+
+## When to use something else
+
+ETLGuard validates a file or API feed and loads it into MySQL in the same run. If you only need one of those halves, or a different place to run checks, these tools are more established.
+
+| If you need | Use | Why |
+| --- | --- | --- |
+| Checks on data already in a warehouse, Spark or a database, with generated data docs | [Great Expectations](https://greatexpectations.io) | It runs against many backends and has a large library of expectations; ETLGuard checks a feed before it is loaded |
+| Schema checks on pandas or Polars DataFrames inside your own code | [Pandera](https://pandera.readthedocs.io) | It validates DataFrames in place, including statistical checks; ETLGuard validates record by record with Pydantic |
+| Tests on models you build in the warehouse | [dbt data tests](https://docs.getdbt.com/docs/build/data-tests) | They run where the transformation runs |
+| Loading many sources without writing a model per feed | [dlt](https://dlthub.com) or [Airbyte](https://airbyte.com) | They ship connectors and infer schemas; ETLGuard needs a Pydantic contract per feed |
+
+ETLGuard fits when a feed arrives as a file or API response, every rejected row needs a reason someone can act on, and the load into MySQL (with reconciliation, retries and SCD2 history) should happen only if the batch passes.
+
+## Configure a pipeline
 
 ```yaml
 pipeline: customers_daily
@@ -159,7 +106,7 @@ Paths are relative to the YAML file. Define your own Pydantic `BaseModel` and us
 The local example uses MySQL 8 in Docker. Existing MySQL 8 installations work too.
 
 ```bash
-docker compose up -d --wait mysql
+docker compose -f docker/compose.yml up -d --wait mysql
 export ETLGUARD_DATABASE_URL='mysql+pymysql://etlguard:etlguard_local_only@127.0.0.1:3307/etlguard'
 etlguard init-db
 etlguard run src/etlguard/examples/pipelines/customers_clean.yaml
@@ -179,11 +126,24 @@ etlguard run path/to/pipeline.yaml --batch-id 11111111-1111-4111-8111-1111111111
 etlguard batch-status 11111111-1111-4111-8111-111111111111
 ```
 
-MySQL tables must use InnoDB. Writers to a target are serialized with an advisory lock; SCD2 also has a unique active-row constraint. Since version 0.1.3, ETLGuard uses READ COMMITTED on load connections to avoid metadata gap-lock deadlocks between different targets. Existing table migrations and writes from other systems require coordination.
+MySQL tables must use InnoDB. Writers to a target are serialized with an advisory lock; SCD2 also has a unique active-row constraint. Load connections use READ COMMITTED to avoid metadata gap-lock deadlocks between different targets. Existing table migrations and writes from other systems require coordination.
 
-## Architecture notes
+## Architecture
 
-The diagram is at the [top of this page](#architecture).
+```mermaid
+flowchart LR
+    A[CSV / Excel / REST API] --> B[Source records + lineage]
+    B --> C[Cleaning]
+    C --> D[Pydantic + dataset checks]
+    D -->|accepted| E[MySQL staging]
+    E --> F[Append / replace / upsert / SCD2]
+    F --> G[Count reconciliation]
+    G --> H[Atomic audit + batch ledger]
+    D -->|rejected| I[CSV + JSON rejects]
+    H --> J[Run summary]
+    I --> J
+    D -. shared engine .-> K[Browser: Pyodide + SQLite]
+```
 
 The validation core has no MySQL imports. Database loading is imported only when needed. The browser bundles the shared Python modules and calls the same engine used by the CLI.
 
@@ -199,11 +159,24 @@ assert result.ok
 print(result.rows_valid, result.rows_rejected, result.summary_json)
 ```
 
+## Run the browser demo locally
+
+CSV contents are processed inside the browser. Startup downloads Pyodide and its libraries from a CDN. The demo uses SQLite in memory; MySQL connections and API ingestion are available through the Python package. If runtime startup fails, click **Retry loading Python**.
+
+```bash
+python3 scripts/serve_demo.py
+```
+
+Source downloads also include launchers in `launchers/`: `etlguard-demo.command` for macOS, `etlguard-demo.cmd` for Windows and `etlguard-demo.sh` for Linux. Each one picks a free local port. Keep its terminal open while using the app; press Ctrl+C to stop it.
+
 ## Development and verification
 
 For a code review, start with the [pipeline](src/etlguard/pipeline.py), [MySQL loader](src/etlguard/loaders/mysql.py), and [design decisions](docs/design-decisions.md).
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 ruff check .
 mypy src/etlguard
@@ -216,27 +189,27 @@ python scripts/build_demo_bundle.py
 python -m build
 ```
 
-Without `ETLGUARD_TEST_MYSQL_URL`, local MySQL integration tests are skipped. GitHub CI provisions MySQL and runs them. The [staging workflow](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/mysql8-staging-gate.yml) also checks MySQL 8.0/8.4 with Python 3.11/3.13, including an isolated shadow load, identical retry and independent row reconciliation.
+Without `ETLGUARD_TEST_MYSQL_URL`, local MySQL integration tests are skipped. GitHub CI provisions MySQL and runs them. A [second workflow](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/mysql8-staging-gate.yml) runs them on MySQL 8.0 and 8.4 with Python 3.11 and 3.13, loads a copy into a separate schema, repeats the load with the same batch ID, and checks the row counts with an independent query.
 
 For browser checks: `python -m pip install -e ".[browser]"`, `python -m playwright install chromium`, then `python scripts/verify_browser.py`.
 
-Read [the release verification report](docs/verification-v0.1.4.md) for the checks performed on this release.
+The [release verification report](docs/verification-v0.1.4.md) lists the checks run for the current release.
 
 ## Documentation
 
 - [User guide: installation, schemas, browser exports, CLI and MySQL](docs/USER_GUIDE.md)
-- [Product scope and acceptance](docs/product-completion.md)
-- [Full interactive engineering and operations manual](docs/ETLGuard-v0.1.3-Manual.pdf)
 - [Configuration reference](docs/configuration.md)
-- [Deployment and release](docs/deployment.md)
+- [Product scope](docs/product-completion.md)
 - [Design decisions](docs/design-decisions.md)
-- [MySQL staging and controlled pilot](docs/mysql8-staging-and-pilot-gate.md)
-- [Independent shadow reconciliation](docs/phase-3-shadow-reconciliation.md)
+- [Deployment and release](docs/deployment.md)
+- [MySQL 8 test matrix](docs/mysql8-staging-and-pilot-gate.md)
+- [Shadow-schema reconciliation check](docs/phase-3-shadow-reconciliation.md)
+- [Archive](docs/archive/): reviews and runbooks from v0.1.1–v0.1.3, including the v0.1.3 PDF manual
 
 ## Scope and limits
 
 CSV reading is streamed, but accepted records and dataset checks are held in memory. This version suits ordinary batch jobs; large feeds need a measured memory budget. The browser handles CSV only, displays up to 250 rows per view, and keeps its SQLite data only for the current run.
 
-Public release and successful synthetic tests establish the demonstrated behavior. The v0.1.3 engineering manual remains a reference for database operations; the current user guide covers v0.1.4. A business database deployment needs target-specific load, recovery and performance checks. Earlier v0.1.2 reports are historical evidence.
+The tests use synthetic data. Before pointing ETLGuard at a business database, test load time, recovery and performance against that database.
 
 Developed by [Raghav Raman](https://github.com/theraghavraman). MIT license; see [LICENSE](LICENSE) and [CHANGELOG](CHANGELOG.md).
