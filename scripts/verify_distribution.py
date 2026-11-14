@@ -32,7 +32,7 @@ def main() -> None:
     with tarfile.open(source) as archive:
         members = archive.getmembers()
         for required in ("README.md", "docs/USER_GUIDE.md", "demo/app.js",
-                         "scripts/serve_demo.py", "Launch ETL Guard.cmd", "Launch ETL Guard.sh"):
+                         "scripts/serve_demo.py", "launchers/etlguard-demo.cmd", "launchers/etlguard-demo.sh"):
             assert any(m.name.endswith("/" + required) for m in members), required
         zip_path = dist / source.name.replace(".tar.gz", "-source.zip")
         with ZipFile(zip_path, "w", ZIP_DEFLATED) as portable:
