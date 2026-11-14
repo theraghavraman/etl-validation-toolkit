@@ -1,3 +1,5 @@
+# Project name pinned so moving this file into docker/ kept the old volume and network names.
+name: etl-validation-toolkit
 services:
   mysql:
     image: mysql:8.0

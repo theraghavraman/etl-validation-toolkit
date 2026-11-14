@@ -1,4 +1,6 @@
 # Disposable LOCAL test database only. Never attach real production volumes or data.
+# Project name pinned so moving this file into docker/ kept the old volume and network names.
+name: etl-validation-toolkit
 services:
   mysql8-staging:
     image: mysql:8.4
@@ -16,6 +18,6 @@ services:
       retries: 40
       start_period: 30s
     volumes:
-      - ./scripts/mysql8_init_shadow.sql:/docker-entrypoint-initdb.d/10-shadow.sql:ro
+      - ../scripts/mysql8_init_shadow.sql:/docker-entrypoint-initdb.d/10-shadow.sql:ro
     tmpfs:
       - /var/lib/mysql:rw,size=512m

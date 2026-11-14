@@ -107,7 +107,7 @@ For MySQL, Decimal constraints set the database precision and scale. Unconstrain
 Start the supplied local MySQL example from the source distribution:
 
 ```bash
-docker compose up -d --wait mysql
+docker compose -f docker/compose.yml up -d --wait mysql
 export ETLGUARD_DATABASE_URL='mysql+pymysql://etlguard:etlguard_local_only@127.0.0.1:3307/etlguard'
 etlguard init-db
 etlguard run my-pipeline/pipeline.yaml
@@ -141,9 +141,9 @@ An identical committed retry returns recorded counts without loading again. Chan
 
 Extract the portable source ZIP, then use the launcher for your platform:
 
-- macOS: `Launch ETL Guard.command`
-- Windows: `Launch ETL Guard.cmd`
-- Linux: `sh 'Launch ETL Guard.sh'`
+- macOS: `launchers/etlguard-demo.command`
+- Windows: `launchers\etlguard-demo.cmd`
+- Linux: `sh launchers/etlguard-demo.sh`
 
 Or run `python scripts/serve_demo.py`. The source ZIP includes the browser bundle. After changing Python validation code, rebuild it with `python scripts/build_demo_bundle.py`.
 

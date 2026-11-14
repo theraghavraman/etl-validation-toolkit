@@ -24,7 +24,7 @@ python -m venv .venv
 # On Windows PowerShell: .venv\Scripts\Activate.ps1
 python -m pip install -e '.[dev]'
 
-docker compose -f docker-compose.mysql8-staging.yml up -d
+docker compose -f docker/compose.mysql8-staging.yml up -d
 # The example is ONLY available on localhost port 3308 and uses ephemeral tmpfs storage.
 export ETLGUARD_TEST_MYSQL_URL='mysql+pymysql://etlguard_ci:etlguard_ci_local_only@127.0.0.1:3308/etlguard_ci'
 python scripts/verify_mysql8_staging.py --confirm-disposable-schema etlguard_ci --execute-tests --report staging-gate-report.json
@@ -37,7 +37,7 @@ $env:ETLGUARD_TEST_MYSQL_URL = 'mysql+pymysql://etlguard_ci:etlguard_ci_local_on
 python scripts/verify_mysql8_staging.py --confirm-disposable-schema etlguard_ci --execute-tests --report staging-gate-report.json
 ```
 
-Exit `0` plus `"status": "passed"` is a staging test pass, not a production deployment approval. Exit `1` means at least one test/quality gate failed; exit `2` means preflight was blocked. For local cleanup, `docker compose -f docker-compose.mysql8-staging.yml down`; the database uses a tmpfs and is never to contain real data. **Do not reuse the example passwords anywhere beyond this local test environment.**
+Exit `0` plus `"status": "passed"` is a staging test pass, not a production deployment approval. Exit `1` means at least one test/quality gate failed; exit `2` means preflight was blocked. For local cleanup, `docker compose -f docker/compose.mysql8-staging.yml down`; the database uses a tmpfs and is never to contain real data. **Do not reuse the example passwords anywhere beyond this local test environment.**
 
 ## Option B: Your own disposable MySQL 8 server
 
