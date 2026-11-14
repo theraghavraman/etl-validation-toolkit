@@ -201,6 +201,8 @@ print(result.rows_valid, result.rows_rejected, result.summary_json)
 
 ## Development and verification
 
+The commit history discloses AI assistance. Tests and coverage document behavior under the stated conditions; they do not establish who wrote each line. For a code review, start with the [pipeline](src/etlguard/pipeline.py), [MySQL loader](src/etlguard/loaders/mysql.py), and [design decisions](docs/design-decisions.md).
+
 ```bash
 python -m pip install -e ".[dev]"
 ruff check .
