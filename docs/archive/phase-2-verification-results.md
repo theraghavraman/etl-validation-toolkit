@@ -13,7 +13,7 @@
 5. **Manual GitHub Actions MySQL 8.0 / 8.4 workflow** — provisioned-test integration gate plus isolated shadow first-load / stable retry smoke test. The CI configuration was authored, but not executed here.
 6. **Offline SQL DDL tests** — compile SCD2 generated active-row uniqueness, upsert business-key uniqueness, and transactional audit/ledger table definitions for the MySQL dialect.
 7. **Disposable Docker Compose second schema** — `etlguard_shadow_ci` has dedicated local-only test credentials, separate from the integration test schema `etlguard_ci`.
-8. **Evidence template + runbook** — `docs/pilot-evidence-template.json` and `docs/shadow-pilot-and-promotion.md`.
+8. **Evidence template + runbook** — `docs/archive/pilot-evidence-template.json` and `docs/archive/shadow-pilot-and-promotion.md`.
 
 ## Local execution evidence
 
@@ -40,7 +40,7 @@
 
 ```bash
 python -m pip install -e '.[dev]'
-docker compose -f docker-compose.mysql8-staging.yml up -d
+docker compose -f docker/compose.mysql8-staging.yml up -d
 export ETLGUARD_TEST_MYSQL_URL='mysql+pymysql://etlguard_ci:etlguard_ci_local_only@127.0.0.1:3308/etlguard_ci'
 python scripts/verify_mysql8_staging.py --confirm-disposable-schema etlguard_ci --execute-tests --report staging-gate-report.json
 ```
@@ -60,7 +60,7 @@ Alternatively, in an access-controlled repository, manually trigger `.github/wor
 
 ## Promotion evidence
 
-Copy `docs/pilot-evidence-template.json` into a protected evidence folder and attach real backup/restore logs, shadow reports, retry and concurrency evidence, monitoring and signed operational approvals. Then run:
+Copy `docs/archive/pilot-evidence-template.json` into a protected evidence folder and attach real backup/restore logs, shadow reports, retry and concurrency evidence, monitoring and signed operational approvals. Then run:
 
 ```bash
 python scripts/assess_promotion.py --staging staging-gate-report.json --evidence pilot-evidence/pilot-evidence.json --report promotion-review.json

@@ -20,7 +20,7 @@ python -m pip install ./etl_validation_toolkit-0.1.2-py3-none-any.whl
 etlguard --help
 
 # Optional local MySQL 8 test database provided by the source ZIP.
-docker compose up -d mysql
+docker compose -f docker/compose.yml up -d mysql
 export ETLGUARD_TEST_MYSQL_URL='mysql+pymysql://etlguard:etlguard_local_only@127.0.0.1:3307/etlguard'
 export ETLGUARD_DATABASE_URL="$ETLGUARD_TEST_MYSQL_URL"
 
@@ -105,4 +105,4 @@ Do not enable the upgrade command in an automatic scheduler. Its MySQL schema mo
 
 ## Follow-on staging gate
 
-Use the separate [MySQL 8 staging gate and controlled-pilot checklist](mysql8-staging-and-pilot-gate.md) to execute the tests against a disposable MySQL 8 database and collect auditable go/no-go evidence. No production certification is implied by shipping the verification kit.
+Use the separate [MySQL 8 staging gate and controlled-pilot checklist](../mysql8-staging-and-pilot-gate.md) to execute the tests against a disposable MySQL 8 database and collect auditable go/no-go evidence. No production certification is implied by shipping the verification kit.

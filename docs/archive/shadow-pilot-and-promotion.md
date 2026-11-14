@@ -13,7 +13,7 @@
 
 ```bash
 python -m pip install -e '.[dev]'
-docker compose -f docker-compose.mysql8-staging.yml up -d
+docker compose -f docker/compose.mysql8-staging.yml up -d
 export ETLGUARD_TEST_MYSQL_URL='mysql+pymysql://etlguard_ci:etlguard_ci_local_only@127.0.0.1:3308/etlguard_ci'
 python scripts/verify_mysql8_staging.py --confirm-disposable-schema etlguard_ci --execute-tests --report staging-gate-report.json
 ```
@@ -72,7 +72,7 @@ that a simple `rows_loaded` check would miss. See
 
 ## Step 4 — Assemble evidence; assess readiness for human approval
 
-Copy `docs/pilot-evidence-template.json` to an evidence folder as `pilot-evidence.json`. Attach the actual logs, reconciliations, backup-restore and incident-recovery evidence and signed owner approvals under that **same directory**. After independently verifying each artifact, set the relevant `verified` field to `true` and set `evidence_file` to the file name. Do not use placeholder documents to mark a check complete.
+Copy `docs/archive/pilot-evidence-template.json` to an evidence folder as `pilot-evidence.json`. Attach the actual logs, reconciliations, backup-restore and incident-recovery evidence and signed owner approvals under that **same directory**. After independently verifying each artifact, set the relevant `verified` field to `true` and set `evidence_file` to the file name. Do not use placeholder documents to mark a check complete.
 
 ```bash
 python scripts/assess_promotion.py \

@@ -126,4 +126,4 @@ etlguard init-db                        # create audit + atomic-commit ledger (r
 - For recoverable runs, assign and persist a batch UUID before the first attempt and use `etlguard run <config.yaml> --batch-id <uuid>`. After interruption, call `etlguard batch-status <uuid>` and retry with the same UUID and immutable source/config. Different input with the same UUID is rejected.
 - `target.lock_timeout_seconds` (0–300; default 30) sets the MySQL advisory lock wait limit. `target.min_replace_ratio` (0–1, optional) protects against drastic shrinkage during `truncate_insert`. All four ETL tables must use InnoDB.
 
-See [the production-hardening runbook](production-v0.1.2.md) for migration and staging test commands.
+See [the production-hardening runbook](archive/production-v0.1.2.md) for migration and staging test commands.
