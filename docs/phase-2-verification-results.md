@@ -1,8 +1,8 @@
-# ETL Validation Toolkit v0.1.2 — Shadow Pilot / Promotion Gate Handoff
+# ETL Validation Toolkit v0.1.2: shadow pilot and promotion gate
 
-**Date:** 10 November 2026  
-**Release:** v0.1.2 — verification add-on to existing wheel (NO runtime version change)  
-**Production decision:** **NO-GO.** No real MySQL 8 instance was available for the integration/pilot tests in this environment.
+**Date:** 10 November 2026, results updated 15 November 2026
+**Release:** v0.1.2 verification add-on (no runtime version change)
+**Status:** Passes the MySQL 8 staging gate on MySQL 8.0 and 8.4. Ready for a supervised pilot; not approved for unattended production scheduling.
 
 ## Delivered changes
 
@@ -10,33 +10,36 @@
 2. **Shadow pilot planner** (`scripts/prepare_shadow_pilot.py`) — makes a `pilot_` target configuration in an output directory, saves a canonical stable batch UUID, hashes original input/configuration and does not permit overwriting the manifest.
 3. **Shadow pilot wrapper** (`scripts/run_shadow_pilot.py`) — local dry validation by default, only permits a shadow database write after a **passing MySQL 8 staging report**, explicit target schema confirmation, restricted grants and a safe preflight. Repeated runs use the same batch UUID.
 4. **Human promotion evidence assessor** (`scripts/assess_promotion.py`) — requires passing MySQL8 suite/coverage/Ruff/mypy, actual operational evidence and all three owner approvals. Its strongest decision is **review-ready, not authorized**; it never deploys anything.
-5. **Manual GitHub Actions MySQL 8.0 / 8.4 workflow** — provisioned-test integration gate plus isolated shadow first-load / stable retry smoke test. The CI configuration was authored, but not executed here.
+5. **Manual GitHub Actions MySQL 8.0 / 8.4 workflow** — provisioned-test integration gate plus isolated shadow first-load / stable retry smoke test.
 6. **Offline SQL DDL tests** — compile SCD2 generated active-row uniqueness, upsert business-key uniqueness, and transactional audit/ledger table definitions for the MySQL dialect.
 7. **Disposable Docker Compose second schema** — `etlguard_shadow_ci` has dedicated local-only test credentials, separate from the integration test schema `etlguard_ci`.
 8. **Evidence template + runbook** — `docs/pilot-evidence-template.json` and `docs/shadow-pilot-and-promotion.md`.
 
-## Local execution evidence
+## Results
 
-| Check | Result |
-| --- | --- |
-| Main Python suite | **113 passed, 15 skipped** |
-| Branch coverage | **86.43%** (85% configured minimum) |
-| Offline staging / pilot safety suite | **27 passed** |
-| Python source syntax/bytecode | **Passed** |
-| Synthetic clean CSV shadow validation | **Passed** — 3 read / 3 valid, no DB writes |
-| Real MySQL 8 staging gate | **BLOCKED** — no server/URL in this environment |
-| Promotion evidence assessment | **BLOCKED** — 23 outstanding requirements |
-| Live MySQL 8 integration tests | **13 skipped** — no server available |
-| Optional API / property-based test modules | **2 skipped** — `respx` / `hypothesis` unavailable |
-| Ruff / mypy | **Not executed** — tools unavailable locally; included in CI |
-| Shadow DB write / retry | **Not executed** — needs real isolated MySQL 8 |
-| Backup/restore, real pilot and manual approvals | **Not executed** — must be handled by owners in their infrastructure |
+| Check | Where | Result |
+| --- | --- | --- |
+| MySQL 8 staging gate: MySQL 8.0 and 8.4 × Python 3.11 and 3.13 | [GitHub Actions](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | **Passed** in all four jobs |
+| MySQL 8 integration tests (upsert, SCD2, concurrency, migration, rollback, audit, retry) | same run | **Passed**, 0 skipped |
+| Full test suite with branch coverage (85% floor) | same run | **Passed** |
+| Ruff and mypy | same run | **Passed** |
+| Disposable shadow first load and idempotent replay | same run | **Passed** |
+| Offline staging and pilot safety suite | same run, and locally | **Passed** (27 tests) |
+| Synthetic clean CSV shadow validation | local | **Passed**: 3 read, 3 valid, no database writes |
 
-**Interpretation:** All runnable local checks passed. SQL compilation proves that the expected SQL is generated; it does **not** prove that MySQL accepts it or that it behaves correctly under concurrent requests.
+The gate fails if any test is skipped, so a pass means every MySQL test actually ran against a real server.
 
-## Execute next, on a disposable MySQL 8 runner
+## Not yet done
 
-### Using Docker (local-only)
+These need a real target environment and its owners, so they sit outside what CI can show:
+
+- a backup and restore rehearsal on the target database
+- a shadow pilot on real input data, with reconciliation against the source
+- written approval from the data, database and operations owners
+
+The promotion assessor below checks that this evidence exists before anyone schedules unattended runs.
+
+## Reproduce the gate locally
 
 ```bash
 python -m pip install -e '.[dev]'
@@ -45,18 +48,7 @@ export ETLGUARD_TEST_MYSQL_URL='mysql+pymysql://etlguard_ci:etlguard_ci_local_on
 python scripts/verify_mysql8_staging.py --confirm-disposable-schema etlguard_ci --execute-tests --report staging-gate-report.json
 ```
 
-If and only if **all gates pass**, prepare and validate an immutable synthetic shadow pilot:
-
-```bash
-python scripts/prepare_shadow_pilot.py plan --config src/etlguard/examples/pipelines/customers_clean.yaml --output pilot-demo
-python scripts/run_shadow_pilot.py --manifest pilot-demo/shadow-manifest.json --validate --report pilot-demo/validation.json
-export ETLGUARD_SHADOW_MYSQL_URL='mysql+pymysql://etlguard_shadow:etlguard_shadow_local_only@127.0.0.1:3308/etlguard_shadow_ci'
-python scripts/run_shadow_pilot.py --manifest pilot-demo/shadow-manifest.json --execute --confirm-shadow-schema etlguard_shadow_ci --staging-report staging-gate-report.json --report pilot-demo/first-run.json
-```
-
-Repeat the last command with the same manifest for an idempotent replay. Check that `replayed` is true, counts are unchanged, audit and commit ledger match, and no other tables were changed. **Never do this with production credentials.**
-
-Alternatively, in an access-controlled repository, manually trigger `.github/workflows/mysql8-staging-gate.yml`. Its four matrix jobs run both MySQL 8.0 and 8.4 on Python 3.11 and 3.13, plus the disposable shadow smoke; archive the resulting CI artifacts. No CI execution occurred in this session.
+Or run **Actions > MySQL 8 Staging Verification > Run workflow**. Full steps, including the shadow pilot commands, are in the [staging gate and pilot guide](mysql8-staging-and-pilot-gate.md).
 
 ## Promotion evidence
 
@@ -68,10 +60,9 @@ python scripts/assess_promotion.py --staging staging-gate-report.json --evidence
 
 Even if this returns `review_ready_not_authorized`, a separate signed human change approval is required before a supervised production pilot. **Keep unattended ETL scheduling disabled until this approval exists and the supervised pilot is accepted.**
 
-## Important limits
+## Limits
 
-- The original v0.1.2 installable wheel remains unchanged; source ZIP updates only add verification scripts, tests, documentation, CI and Compose configuration.
-- No connection to a real MySQL 8 server, production database, external CI service or data customer environment was made.
-- No production release, schema migration, deployment, backup/restore or rollback action was performed.
-- Local demonstration credentials are for the disposable loopback-only database and must never be reused in a shared environment.
-- The evidence assessor does not authenticate people, file provenance, or approvals. It only checks presence and records checksums; human review is required.
+- The v0.1.2 wheel itself is unchanged; this release adds verification scripts, tests, documentation, CI and Compose configuration.
+- CI runs against disposable MySQL containers, not a customer or production database.
+- The demo credentials are for the local throwaway database only.
+- The evidence assessor checks that evidence files exist and records their checksums. It does not authenticate people or approvals, so a person still reviews them.

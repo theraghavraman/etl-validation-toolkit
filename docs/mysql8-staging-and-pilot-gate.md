@@ -1,8 +1,8 @@
 # ETL Validation Toolkit v0.1.2: MySQL 8 Staging Gate and Controlled Pilot
 
-## Release decision
+## Status
 
-**NO-GO for unattended production** until real MySQL 8 tests, operational recovery rehearsal, controlled pilot, and approval are complete. This kit does not make production changes and does not turn a local unit-test pass into production certification.
+The MySQL 8 gate below passes on MySQL 8.0 and 8.4 with Python 3.11 and 3.13 ([run of 15 November 2026](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453)): integration tests, the full suite with the 85% branch-coverage floor, Ruff, mypy and the shadow first-load and replay smoke test, with no skipped tests. That makes the toolkit ready for a supervised pilot, not for unattended production use. A real deployment still needs a backup and restore rehearsal on the target database, a shadow pilot on real data, and sign-off from the data and database owners, as described in the pilot protocol below.
 
 ## What this staging gate verifies
 
@@ -49,7 +49,7 @@ Exit `0` plus `"status": "passed"` is a staging test pass, not a production depl
 
 ## Option C: GitHub Actions, with no external database credentials
 
-Copy this project into your own private GitHub repository. Run the included `.github/workflows/mysql8-staging-gate.yml` via **Actions > MySQL 8 Staging Verification > Run workflow**. It provisions disposable MySQL 8.0 and MySQL 8.4 service containers, runs Python 3.11 and 3.13 jobs, and preserves test reports as artifacts. This is a CI compatibility gate only; it is not your application staging database.
+Run **Actions > MySQL 8 Staging Verification > Run workflow**. It starts disposable MySQL 8.0 and 8.4 service containers, runs the gate on Python 3.11 and 3.13, and keeps the reports as artifacts for 30 days. It checks compatibility with MySQL 8; it is not a substitute for testing against your own staging database.
 
 ## Controlled pilot protocol (manual approval required)
 
@@ -90,15 +90,16 @@ Copy this project into your own private GitHub repository. Run the included `.gi
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| MySQL 8.0 integration | `staging-gate-report.json` + logs | NOT RUN |
-| MySQL 8.4 integration | `staging-gate-report.json` + logs | NOT RUN |
-| Ruff / mypy | CI logs | NOT RUN |
-| Complete pytest suite / coverage | CI logs | NOT RUN |
-| SCD2 active-row uniqueness and concurrency | MySQL test logs + verification SQL | NOT RUN |
-| Immutable input and durable batch ID | Scheduler configuration evidence | NOT RUN |
-| Backup restore rehearsal | Restore log and elapsed time | NOT RUN |
-| Shadow pilot and reconciliation | Signed pilot evidence | NOT RUN |
-| Live supervised pilot | Change record / monitoring | NOT RUN |
+| MySQL 8.0 integration | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed (Python 3.11, 3.13) |
+| MySQL 8.4 integration | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed (Python 3.11, 3.13) |
+| Ruff / mypy | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed |
+| Complete pytest suite / coverage | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed, 85% branch-coverage floor met, 0 skipped |
+| SCD2 active-row uniqueness and concurrency | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed (MySQL integration tests) |
+| Immutable input and durable batch ID | Scheduler configuration evidence | Not yet run |
+| Backup restore rehearsal | Restore log and elapsed time | Not yet run |
+| Disposable shadow load and idempotent replay | [CI run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) | Passed |
+| Shadow pilot on real data and reconciliation | Signed pilot evidence | Not yet run |
+| Live supervised pilot | Change record / monitoring | Not yet run |
 | Production approval | Data owner + DB owner + Operations | NOT APPROVED |
 
 **Never set a gate to PASS from documentation alone.**

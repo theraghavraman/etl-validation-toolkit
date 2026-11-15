@@ -1,15 +1,14 @@
-# ETL Validation Toolkit — Code Review, Test Results & Patch Handover
+# ETL Validation Toolkit v0.1.1: code review and test results
 
 **Review date:** 10 November 2026  
-**Original artifacts:** `etl-validation-toolkit-v0.1.0.zip`, `etl_validation_toolkit-0.1.0-py3-none-any.whl`  
-**Reviewed outputs:** `etl-validation-toolkit-v0.1.1-reviewed.zip`, `etl_validation_toolkit-0.1.1-py3-none-any.whl`  
+**Scope:** v0.1.0 to v0.1.1  
 **Release classification:** Reviewed local candidate; **not certified production-ready**.
 
 ## Executive summary
 
 The project is a well-structured Python ETL data-quality framework with CSV, Excel and REST API sources; cleaning; Pydantic row validation; dataset checks; rejected-row CSV/JSON; a CLI; MySQL staging/upsert/transactional replacement; and SCD Type 2 history. It also contains a static browser demo, test suite, example datasets, configuration reference and CI workflows.
 
-The uploaded original wheel's 33 package and resource files were byte-for-byte identical to the corresponding original source files. The original wheel installed locally without fetching dependencies; its CLI launched and `validate .../customers_clean.yaml` passed.
+The v0.1.0 wheel's 33 package and resource files matched the source byte for byte. It installed without fetching dependencies, the CLI started, and `validate .../customers_clean.yaml` passed.
 
 An important false-pass condition was reproduced in the original: 100 identical invalid records gave `rows_rejected=1`, `duplicates_dropped=99` and allowed a 5%-threshold quality gate to pass. A destructive replacement operation was also demonstrated in SQLite: loading zero validated records into `truncate_insert` deleted an existing target row. The reviewed 0.1.1 patch addresses both risks and three additional safety/correctness issues.
 
@@ -38,9 +37,9 @@ An important false-pass condition was reproduced in the original: 100 identical 
 | SQLite-backed loader smoke tests | Passed | Passed |
 | Local wheel build | Original wheel provided | Built successfully offline |
 | Python compile check | Not required | Passed |
-| Actual MySQL 8 end-to-end integration | Not run | **Not run** |
+| Actual MySQL 8 end-to-end integration | Not run | Not run in this review; [passed on MySQL 8.0 and 8.4](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453) on 15 November 2026 |
 
-Ten skipped test cases consist of eight MySQL integration tests (no MySQL test instance), plus two tests/modules requiring optional `respx` and `hypothesis` packages. The environment could not download additional packages, so these checks are **not** claimed as completed. The project includes workflows to run them in a properly provisioned CI environment.
+Ten tests were skipped in this review: eight MySQL integration tests, because no MySQL server was set up for it, and two that need the optional `respx` and `hypothesis` packages. The MySQL tests have since run and passed in CI ([run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453)).
 
 ## Remaining production-readiness concerns
 

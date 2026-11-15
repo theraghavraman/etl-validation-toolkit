@@ -94,7 +94,7 @@ A separate authorized deployment team must confirm the actual production schema,
 
 ## Known boundaries and recovery
 
-- This kit **cannot run a real MySQL 8 service in the current artifact-building environment**. An external MySQL 8 staging instance is needed for the 13 database integration tests and the shadow load.
+- The 13 MySQL integration tests and the disposable shadow load run against MySQL 8.0 and 8.4 containers in CI ([latest run](https://github.com/theraghavraman/etl-validation-toolkit/actions/runs/43679925453)). Before a real pilot, run them against a staging server that matches your production version and settings.
 - Local automated checks do not test infrastructure-specific timeouts, replication lag, cloud privileges, backup/PITR or actual workload performance.
 - A successfully committed transaction cannot be undone with a later `ROLLBACK`. Use approved compensating actions or independently rehearsed restore/PITR.
 - Source and config SHA-256 checks detect changes between checks; protect shared source files against concurrent edits while the load is running.
