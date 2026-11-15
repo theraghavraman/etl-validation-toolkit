@@ -42,6 +42,7 @@ That prints a run summary and writes a JSON summary and a rejects report to `etl
 ---
 
 [![CI](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
+[![MySQL 8 tests](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/mysql8-staging-gate.yml/badge.svg)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/mysql8-staging-gate.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Ftheraghavraman.github.io%2Fetl-validation-toolkit%2Fcoverage.json)](https://github.com/theraghavraman/etl-validation-toolkit/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)
 [![MIT License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
